@@ -9,6 +9,7 @@ const allRows = () => [...DATA.developmentRows, ...DATA.subjectRows];
 const rowForKey = (key) => allRows().find((row) => row.key === key);
 const areaForKey = (key) => DATA.competencyAreas[key];
 const areaList = () => allRows().map((row) => areaForKey(row.key)).filter(Boolean);
+const REQUIRED_AREAS = ["emotional"];
 
 let draft = createEmptyDraft();
 let statusMessage = "";
@@ -32,7 +33,7 @@ function createEmptyDraft() {
     focus: "",
     sbj: "",
     bildungsgang: "",
-    selectedAreas: [],
+    selectedAreas: [...REQUIRED_AREAS],
     ratings: {},
     subareaNotes: {},
     proposalDrafts: {},
@@ -206,8 +207,8 @@ function renderAreaSelection() {
   const checkboxes = areaList().map((area) => `
     <div class="check-card">
       <label>
-        <input type="checkbox" name="area" value="${area.id}" ${draft.selectedAreas.includes(area.id) ? "checked" : ""} />
-        <strong>${escapeHtml(area.label)}</strong>
+        <input type="checkbox" name="area" value="${area.id}" ${isAreaRequired(area.id) ? "checked disabled" : draft.selectedAreas.includes(area.id) ? "checked" : ""} />
+        <strong>${escapeHtml(area.label)}${isAreaRequired(area.id) ? " · Pflichtbereich" : ""}</strong>
       </label>
     </div>
   `).join("");
@@ -218,7 +219,7 @@ function renderAreaSelection() {
       <div class="section-title">
         <div>
           <h2>Welche Bereiche sollen bearbeitet werden?</h2>
-          <p class="hint">Es müssen nicht alle Bereiche ausgefüllt werden. Wählen Sie nur die Bereiche aus, die aktuell relevant sind.</p>
+          <p class="hint">Emotionalität, Sozialverhalten ist immer verpflichtend. Weitere Bereiche wählen Sie nur aus, wenn sie aktuell relevant sind.</p>
         </div>
         <span class="badge">Bereiche</span>
       </div>
@@ -232,6 +233,7 @@ function renderAreaSelection() {
 }
 
 function renderCompetencyCheck() {
+  ensureRequiredAreas();
   const selected = draft.selectedAreas.length ? draft.selectedAreas : [];
   app.innerHTML = `
     <section class="stack">
@@ -367,7 +369,7 @@ function renderSuggestionsView() {
         <div>
           ${progress(5)}
           <h2>Mögliche Förderschwerpunkte</h2>
-          <p class="hint">Empfohlen werden höchstens drei Schwerpunkte. Übernahme erfolgt nur durch Ihre Entscheidung.</p>
+          <p class="hint">Alle passenden Schwerpunkte werden nach Dringlichkeit sortiert angezeigt. Übernahme erfolgt nur durch Ihre Entscheidung.</p>
         </div>
         <span class="badge">${recommendations.length} Vorschlag${recommendations.length === 1 ? "" : "e"}</span>
       </div>
@@ -491,7 +493,7 @@ function getRecommendations() {
   });
 
   draft.manualSuggestions.forEach((manual) => recommendations.push(manual));
-  return recommendations.sort((a, b) => b.score - a.score).slice(0, 3 + draft.manualSuggestions.length);
+  return recommendations.sort((a, b) => b.score - a.score);
 }
 
 function collectObservedNeeds(tags, areaId) {
@@ -550,6 +552,10 @@ function joinList(items) {
 
 function renderRasterView() {
   syncAllInputs();
+  ensureRequiredAreas();
+  const requiredNotice = isRequiredRowFilled("emotional")
+    ? ""
+    : `<p class="notice">Pflichtbereich: „Emotionalität, Sozialverhalten“ muss vor der Ausgabe ausgefüllt werden.</p>`;
   app.innerHTML = `
     <section class="stack">
       <div class="raster-toolbar">
@@ -568,6 +574,7 @@ function renderRasterView() {
         </div>
       </div>
       ${statusMessage ? `<p class="notice status">${escapeHtml(statusMessage)}</p>` : ""}
+      ${requiredNotice}
       <section class="panel">
         ${renderRasterForm()}
       </section>
@@ -640,7 +647,7 @@ function renderPlanTable(title, rows) {
         <tbody>
           ${rows.map((row) => `
             <tr>
-              <td class="row-label">${escapeHtml(row.label)}</td>
+              <td class="row-label">${escapeHtml(row.label)}${isAreaRequired(row.key) ? `<br><span class="required-note">Pflichtbereich</span>` : ""}</td>
               ${DATA.columns.map((column) => `
                 <td><textarea data-grid="${row.key}" data-column="${column}">${escapeHtml(draft.grid[row.key]?.[column] || "")}</textarea></td>
               `).join("")}
@@ -711,6 +718,23 @@ function renderDraftItem(item) {
 
 function documentTitle(item = draft) {
   return item.planType === "praeventiv" ? "Präventiver Förderplan" : "Förderplan";
+}
+
+function isAreaRequired(key) {
+  return REQUIRED_AREAS.includes(key);
+}
+
+function ensureRequiredAreas() {
+  draft.selectedAreas = ensureRequiredAreasForList(draft.selectedAreas);
+}
+
+function ensureRequiredAreasForList(list) {
+  return [...new Set([...REQUIRED_AREAS, ...(Array.isArray(list) ? list : [])])].filter((key) => DATA.competencyAreas[key]);
+}
+
+function isRequiredRowFilled(rowKey) {
+  const row = draft.grid[rowKey] || emptyText();
+  return DATA.columns.some((column) => String(row[column] || "").trim().length > 0);
 }
 
 function formatPeriod(item = draft) {
@@ -872,6 +896,7 @@ function normalizeDraft(item) {
     manualSuggestions: Array.isArray(safe.manualSuggestions) ? safe.manualSuggestions : [],
     freeSubjects: safe.freeSubjects || {}
   };
+  normalized.selectedAreas = ensureRequiredAreasForList(normalized.selectedAreas);
   normalized.title = documentTitle(normalized);
   return normalized;
 }
@@ -923,7 +948,7 @@ function pickAllowedDraft(item) {
     focus: item.focus || "",
     sbj: item.sbj || "",
     bildungsgang: item.bildungsgang || "",
-    selectedAreas: Array.isArray(item.selectedAreas) ? item.selectedAreas.filter((key) => DATA.competencyAreas[key]) : [],
+    selectedAreas: ensureRequiredAreasForList(Array.isArray(item.selectedAreas) ? item.selectedAreas.filter((key) => DATA.competencyAreas[key]) : []),
     ratings: item.ratings || {},
     subareaNotes: item.subareaNotes || {},
     proposalDrafts: item.proposalDrafts || {},
@@ -979,6 +1004,11 @@ function duplicateDraft() {
 
 function openPrintDialog() {
   syncAllInputs();
+  if (!isRequiredRowFilled("emotional")) {
+    statusMessage = "Bitte füllen Sie vor der Ausgabe den Pflichtbereich „Emotionalität, Sozialverhalten“ aus.";
+    renderRasterView();
+    return;
+  }
   printNameInput.value = "";
   printDialog.classList.remove("hidden");
   printNameInput.focus();
@@ -1204,13 +1234,13 @@ app.addEventListener("click", (event) => {
   if (action === "row-suggestions") {
     syncRasterInputs();
     const row = button.dataset.row;
-    draft.selectedAreas = [...new Set([...draft.selectedAreas, row])].filter((key) => DATA.competencyAreas[key]);
+    draft.selectedAreas = ensureRequiredAreasForList([...draft.selectedAreas, row]);
     setStep("suggestions", renderSuggestionsView);
   }
   if (action === "row-check") {
     syncRasterInputs();
     const row = button.dataset.row;
-    draft.selectedAreas = [...new Set([...draft.selectedAreas, row])].filter((key) => DATA.competencyAreas[key]);
+    draft.selectedAreas = ensureRequiredAreasForList([...draft.selectedAreas, row]);
     setStep("competencies", renderCompetencyCheck);
   }
   if (action === "load-draft") {
@@ -1238,7 +1268,7 @@ app.addEventListener("submit", (event) => {
     setStep("areas", renderAreaSelection);
   }
   if (form.dataset.form === "areas") {
-    draft.selectedAreas = [...form.querySelectorAll('input[name="area"]:checked')].map((item) => item.value);
+    draft.selectedAreas = ensureRequiredAreasForList([...form.querySelectorAll('input[name="area"]:checked')].map((item) => item.value));
     setStep("competencies", renderCompetencyCheck);
   }
 });

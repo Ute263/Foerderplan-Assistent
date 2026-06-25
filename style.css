@@ -480,6 +480,14 @@ input[type="checkbox"] {
   background: #faf9f6;
 }
 
+.required-note {
+  display: inline-block;
+  margin-top: 6px;
+  color: var(--warning);
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
 .plan-table .row-tools {
   width: 150px;
 }
