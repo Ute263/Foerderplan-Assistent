@@ -742,7 +742,7 @@ input[type="checkbox"] {
 @media print {
   @page {
     size: A4 landscape;
-    margin: 0;
+    margin: 14mm;
   }
 
   body {
@@ -760,7 +760,23 @@ input[type="checkbox"] {
   .print-document {
     width: auto;
     min-height: 0;
-    padding: 12mm;
+    padding: 0;
     box-shadow: none;
+  }
+
+  .print-document table {
+    break-inside: auto;
+    page-break-inside: auto;
+  }
+
+  .print-document tr {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  .print-section-label,
+  .print-footnote {
+    break-after: avoid;
+    page-break-after: avoid;
   }
 }
