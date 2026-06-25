@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Förderplan-Assistent</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <header class="app-header">
+      <div>
+        <p class="eyebrow">lokal · anonym · druckfertig</p>
+        <h1>Förderplan-Assistent</h1>
+        <p class="subtitle">
+          Strukturierte Formulierungshilfe für das verbindliche Förderplanraster.
+        </p>
+      </div>
+    </header>
+
+    <main id="app" class="app-shell" aria-live="polite"></main>
+
+    <div id="print-dialog" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="print-dialog-title">
+      <div class="modal">
+        <h2 id="print-dialog-title">Name nur für den Ausdruck eingeben</h2>
+        <p>Der Name wird nur in die Druckansicht eingefügt und nicht gespeichert.</p>
+        <label class="field">
+          <span>Name</span>
+          <input id="temporary-print-name" type="text" autocomplete="off" />
+        </label>
+        <div class="modal-actions">
+          <button id="confirm-print" class="primary" type="button">Drucken / PDF erstellen</button>
+          <button id="cancel-print" type="button">Abbrechen</button>
+        </div>
+      </div>
+    </div>
+
+    <section id="print-root" aria-hidden="true"></section>
+
+    <script src="data.js"></script>
+    <script src="script.js"></script>
+  </body>
+</html>
