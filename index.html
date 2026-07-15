@@ -1,31 +1,44 @@
+<!--
+FörderKompass
+© 2026 Ute Holzschneider-Riedl. Alle Rechte vorbehalten.
+
+Diese App unterstützt die lokale Erstellung von Förderplänen.
+Keine echten Schülerdaten im Code oder in Beispieldaten speichern.
+-->
 <!doctype html>
 <html lang="de">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Förderplan-Assistent</title>
-    <link rel="stylesheet" href="style.css" />
+    <meta name="theme-color" content="#2f6f55" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="FörderKompass" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <title>FörderKompass</title>
+    <link rel="manifest" href="manifest.webmanifest" />
+    <link rel="icon" href="icon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="assets/apple-touch-icon.png" />
+    <link rel="stylesheet" href="style.css?v=193" />
   </head>
   <body>
-    <header class="app-header">
-      <div>
-        <p class="eyebrow">lokal · anonym · druckfertig</p>
-        <h1>Förderplan-Assistent</h1>
-        <p class="subtitle">
-          Strukturierte Formulierungshilfe für das verbindliche Förderplanraster.
-        </p>
-      </div>
-    </header>
-
     <main id="app" class="app-shell" aria-live="polite"></main>
+
+    <footer class="app-footer">
+      © 2026 Ute Holzschneider-Riedl. Alle Rechte vorbehalten.
+    </footer>
 
     <div id="print-dialog" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="print-dialog-title">
       <div class="modal">
-        <h2 id="print-dialog-title">Name nur für den Ausdruck eingeben</h2>
-        <p>Der Name wird nur in die Druckansicht eingefügt und nicht gespeichert.</p>
+        <h2 id="print-dialog-title">Name für den Ausdruck prüfen</h2>
+        <p>Falls nötig, kann der Name für diesen Ausdruck abweichend eingetragen werden. Diese Eingabe wird nicht zusätzlich gespeichert.</p>
         <label class="field">
-          <span>Name</span>
-          <input id="temporary-print-name" type="text" autocomplete="off" />
+          <span>Vorname</span>
+          <input id="temporary-print-first-name" type="text" autocomplete="off" />
+        </label>
+        <label class="field">
+          <span>Nachname</span>
+          <input id="temporary-print-last-name" type="text" autocomplete="off" />
         </label>
         <div class="modal-actions">
           <button id="confirm-print" class="primary" type="button">Drucken / PDF erstellen</button>
@@ -34,9 +47,42 @@
       </div>
     </div>
 
+    <div id="word-export-dialog" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="word-export-dialog-title">
+      <div class="modal">
+        <h2 id="word-export-dialog-title">Name für Word prüfen</h2>
+        <p>Diese Angaben werden nur für diese Word-Datei verwendet. Im Förderplantext wird nur der Vorname eingesetzt.</p>
+        <label class="field">
+          <span>Vorname</span>
+          <input id="word-export-first-name" type="text" autocomplete="off" />
+        </label>
+        <label class="field">
+          <span>Nachname</span>
+          <input id="word-export-last-name" type="text" autocomplete="off" />
+        </label>
+        <p class="hint">Achtung: Diese Word-Datei kann personenbezogene Daten enthalten. Bitte speichern und versenden Sie sie datenschutzgerecht.</p>
+        <p id="word-export-dialog-status" class="field-help" aria-live="polite"></p>
+        <div class="modal-actions">
+          <button id="confirm-word-export" class="primary" type="button">Word-Datei erstellen</button>
+          <button id="cancel-word-export" type="button">Abbrechen</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="transfer-dialog" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="transfer-dialog-title">
+      <div class="modal modal-wide">
+        <h2 id="transfer-dialog-title">So wird der Eintrag ins Raster übernommen</h2>
+        <div id="transfer-dialog-content"></div>
+      </div>
+    </div>
+
     <section id="print-root" aria-hidden="true"></section>
 
+    <script src="foerderketten.js"></script>
+    <script src="textModules.js?v=196"></script>
+    <script src="endkatalog.js"></script>
+    <script src="praxisMassnahmen.js"></script>
     <script src="data.js"></script>
-    <script src="script.js"></script>
+    <script src="script.js?v=295"></script>
+    <script src="pwa.js"></script>
   </body>
 </html>

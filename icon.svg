@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="FörderKompass">
+  <rect width="512" height="512" rx="108" fill="#eaf3ee"/>
+  <circle cx="390" cy="128" r="56" fill="#2f6f55"/>
+  <circle cx="390" cy="128" r="40" fill="#fffdfa"/>
+  <path d="M390 92v16M390 148v16M354 128h16M410 128h16" stroke="#2f6f55" stroke-width="8" stroke-linecap="round"/>
+  <path d="M374 144l13-34 19 30-15-7z" fill="#e7b84a"/>
+  <path d="M406 112l-13 34-19-30 15 7z" fill="#2f6f55"/>
+  <rect x="104" y="96" width="270" height="328" rx="28" fill="#fffdfa" stroke="#2f6f55" stroke-width="14"/>
+  <rect x="140" y="148" width="180" height="18" rx="9" fill="#79a89a"/>
+  <rect x="140" y="198" width="190" height="16" rx="8" fill="#c7dad3"/>
+  <rect x="140" y="244" width="148" height="16" rx="8" fill="#c7dad3"/>
+  <rect x="140" y="290" width="182" height="16" rx="8" fill="#c7dad3"/>
+  <path d="M156 360h40M156 382h76M156 404h110" stroke="#2f6f55" stroke-width="14" stroke-linecap="round"/>
+  <path d="M296 352c28 18 52 30 84 34" stroke="#e7b84a" stroke-width="12" stroke-linecap="round" fill="none"/>
+  <circle cx="296" cy="352" r="12" fill="#e7b84a"/>
+  <circle cx="380" cy="386" r="12" fill="#2f6f55"/>
+</svg>
