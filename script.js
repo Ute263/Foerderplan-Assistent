@@ -24,7 +24,7 @@ const DATA = window.FOERDERPLAN_DATA || {};
 const STORAGE_KEY = DATA.storageKey || "foerderplanAssistent:drafts:v2";
 const CUSTOM_MODULE_STORAGE_KEY = "customTextModules";
 const BACKUP_NAME = "foerderplanung-direkt-backup";
-const APP_VERSION = "1.0";
+const APP_VERSION = "1.1";
 const WORK_FILE_NAME = "foerderplanung-direkt-daten.json";
 const PAYPAL_SUPPORT_URL = "https://www.paypal.com/donate/?business=uteholzschneider%40t-online.de&currency_code=EUR";
 const PAYPAL_SUPPORT_PLACEHOLDER = "[PayPal-Link ergänzen]";
@@ -91,6 +91,14 @@ const inputModeOptions = [
     textSource: "competence",
     fieldButton: "Vorschlag aus Kompetenzraster erstellen",
     description: "Kompetenzen einschätzen und daraus passende Vorschläge für den Förderplan erstellen."
+  },
+  {
+    key: "freeChains",
+    label: "Förderplan frei zusammenstellen",
+    shortLabel: "Freie Förderketten-Auswahl",
+    textSource: "chains",
+    fieldButton: "Förderketten auswählen",
+    description: "Vorhandene Förderketten ohne Kompetenzraster selbst auswählen und zu einem Förderplan zusammenstellen."
   },
   {
     key: "customModules",
@@ -8480,7 +8488,7 @@ function renderRaster() {
         </div>
         ${activeRow ? renderRasterSingleView(activeRow) : renderRasterOverview()}
       </section>
-      ${workflowBottomNav({ back: "competence", next: "agreements", nextLabel: "Weiter zu Vereinbarungen" })}
+      ${workflowBottomNav({ back: normalizeInputMode(plan.inputMode) === "competenceRaster" ? "competence" : "workMode", next: "agreements", nextLabel: "Weiter zu Vereinbarungen" })}
       ${renderFloatingScrollTopButton()}
     </section>
   `;
@@ -17281,6 +17289,137 @@ function openBlockModal(row, columnKey, source = "fixed", options = {}) {
   modal.querySelector("[data-module-search]")?.focus();
 }
 
+
+function freeChainKey(chain, index = 0) {
+  return [chain.bereich || "", chain.klasse || "", chain.kompetenz || "", chain.gruppe || "", chain.rating || "", index].join("|");
+}
+
+function freeSelectableChainsForArea(area) {
+  const gradeBand = gradeBandForArea(area);
+  const seen = new Set();
+  return [...completeSupportChains, ...fallbackSupportChains]
+    .filter((chain) => chain && chain.bereich === area)
+    .filter((chain) => !chain.klasse || chain.klasse === gradeBand)
+    .filter((chain) => ["unsicher", "teilweise unsicher"].includes(chain.rating))
+    .filter((chain) => isUsableSupportChain(chain))
+    .filter((chain) => {
+      const pair = supportPairsForChain(chain)[0] || {};
+      const signature = [chain.bereich, chain.klasse || "", chain.kompetenz, chain.gruppe || "", chain.rating,
+        istStandVariantsForChain(chain).map((item) => item.text).join("~"), pair.ziel || "", pair.massnahme || "", pair.evaluation || ""].join("|");
+      if (seen.has(signature)) return false;
+      seen.add(signature);
+      return true;
+    })
+    .sort((a, b) => String(a.kompetenz || "").localeCompare(String(b.kompetenz || ""), "de") || String(a.rating || "").localeCompare(String(b.rating || ""), "de"));
+}
+
+function freeChainRatingLabel(rating) {
+  return rating === "unsicher" ? "deutlicher Förderbedarf" : "teilweiser Förderbedarf";
+}
+
+function renderFreeChainModal(row) {
+  const chains = freeSelectableChainsForArea(row);
+  const gradeBand = gradeBandForArea(row);
+  const modal = document.createElement("div");
+  modal.id = "free-chain-modal";
+  modal.className = "modal-backdrop";
+  modal.setAttribute("role", "dialog");
+  modal.setAttribute("aria-modal", "true");
+  modal.setAttribute("aria-labelledby", "free-chain-modal-title");
+  modal.innerHTML = `
+    <div class="modal modal-wide block-module-modal">
+      <div class="block-module-modal-header">
+        <div>
+          <h2 id="free-chain-modal-title">Förderketten auswählen</h2>
+          <p>${escapeHtml(row)} · ${escapeHtml(gradeBand)}</p>
+        </div>
+        <button class="secondary-button" type="button" data-action="close-free-chain-modal">Schließen</button>
+      </div>
+      <div class="block-module-modal-body stack">
+        <p class="hint">Wähle eine oder mehrere zusammenhängende Förderketten aus. Daraus werden Ist-Stand, Ziele, Maßnahmen und Evaluation gemeinsam erstellt. Das Kompetenzraster wird dafür nicht benötigt.</p>
+        ${chains.length ? `
+          <label class="field">
+            <span>Förderketten durchsuchen</span>
+            <input type="search" data-free-chain-search placeholder="z. B. Lesen, Aufmerksamkeit, Konfliktverhalten" />
+          </label>
+          <div class="block-selection-toolbar">
+            <button class="small-button quiet-button" type="button" data-action="clear-free-chain-selection">Auswahl leeren</button>
+            <span class="field-help" data-free-chain-count>0 Förderketten ausgewählt</span>
+          </div>
+          <div class="block-list" data-free-chain-list>
+            ${chains.map((chain, index) => {
+              const key = freeChainKey(chain, index);
+              const firstIst = istStandVariantsForChain(chain)[0]?.text || "";
+              const firstPair = supportPairsForChain(chain)[0] || {};
+              const search = [chain.kompetenz, chain.gruppe, chain.rating, firstIst, firstPair.ziel].join(" ").toLocaleLowerCase("de-DE");
+              return `
+                <label class="block-list-item" data-free-chain-item data-free-chain-searchtext="${escapeHtml(search)}">
+                  <input type="checkbox" data-free-chain-select data-free-chain-index="${index}" value="${escapeHtml(key)}" />
+                  <div>
+                    <strong>${escapeHtml(chain.kompetenz || "Förderkette")}</strong>
+                    <span>${escapeHtml(chain.gruppe ? `${chain.gruppe} · ${freeChainRatingLabel(chain.rating)}` : freeChainRatingLabel(chain.rating))}</span>
+                    ${firstPair.ziel ? `<p class="field-help"><strong>Ziel:</strong> ${escapeHtml(firstPair.ziel)}</p>` : ""}
+                  </div>
+                </label>`;
+            }).join("")}
+          </div>
+          <div class="actions">
+            <button class="primary" type="button" data-action="apply-free-chain-selection" data-free-chain-row="${escapeHtml(row)}">Auswahl in Förderplan übernehmen</button>
+            <button class="secondary-button" type="button" data-action="close-free-chain-modal">Abbrechen</button>
+          </div>
+          <p class="field-help" data-free-chain-status aria-live="polite"></p>
+        ` : `<p class="notice">Für diesen Förderbereich sind derzeit keine frei auswählbaren Förderketten hinterlegt.</p>`}
+      </div>
+    </div>`;
+  app.appendChild(modal);
+  modal.querySelector("[data-free-chain-search]")?.focus();
+}
+
+function closeFreeChainModal() {
+  document.querySelector("#free-chain-modal")?.remove();
+  document.querySelectorAll('[data-text-source="chains"]').forEach((button) => {
+    button.classList.remove("active");
+    button.setAttribute("aria-expanded", "false");
+  });
+}
+
+function updateFreeChainSelectionCount(modal) {
+  const count = modal?.querySelectorAll("[data-free-chain-select]:checked").length || 0;
+  const target = modal?.querySelector("[data-free-chain-count]");
+  if (target) target.textContent = `${count} ${count === 1 ? "Förderkette" : "Förderketten"} ausgewählt`;
+}
+
+function applyFreeChainSelection(row, modal) {
+  const available = freeSelectableChainsForArea(row);
+  const indexes = [...(modal?.querySelectorAll("[data-free-chain-select]:checked") || [])]
+    .map((input) => Number(input.dataset.freeChainIndex))
+    .filter((index) => Number.isInteger(index) && available[index]);
+  const status = modal?.querySelector("[data-free-chain-status]");
+  if (!indexes.length) {
+    if (status) status.textContent = "Bitte mindestens eine Förderkette auswählen.";
+    return;
+  }
+  const selected = applyComposerVariants(indexes.map((index) => available[index]), 0);
+  const next = {
+    istStand: removeRepeatedSentences(selected.map((chain) => cleanSuggestionSentence(chain.istStand)).filter(Boolean)).join(" "),
+    ziele: formatComposerItems(selected.map((chain) => chain.ziel).filter(Boolean), "list", selected.length),
+    massnahmen: formatComposerItems(selected.map((chain) => chain.massnahme).filter(Boolean), "list", selected.length),
+    evaluation: formatComposerItems(selected.map((chain) => chain.evaluation).filter(Boolean), "list", selected.length)
+  };
+  if (!plan.rasterTexts[row]) plan.rasterTexts[row] = emptyRasterRow();
+  const existing = plan.rasterTexts[row];
+  const hasExisting = columns.some((column) => String(existing[column.key] || "").trim());
+  if (hasExisting && !window.confirm("In diesem Förderbereich steht bereits Text. Soll die freie Förderketten-Auswahl die vorhandenen vier Felder ersetzen?")) return;
+  columns.forEach((column) => {
+    plan.rasterTexts[row][column.key] = next[column.key] || "";
+  });
+  touchPlan();
+  scheduleAutosave();
+  closeFreeChainModal();
+  activeRasterRow = row;
+  renderRaster();
+}
+
 function openTextSource(row, columnKey, source) {
   markTextSource(row, columnKey, source);
   if (source === "competence") {
@@ -17289,6 +17428,10 @@ function openTextSource(row, columnKey, source) {
   }
   if (source === "free") {
     renderSmoothedFieldSuggestion(row, columnKey);
+    return;
+  }
+  if (source === "chains") {
+    openFreeChainModal(row);
     return;
   }
   if (source === "custom") {
@@ -33153,6 +33296,22 @@ document.addEventListener("keydown", (event) => {
 window.addEventListener("scroll", updateFloatingScrollTopButton, { passive: true });
 window.addEventListener("resize", updateFloatingScrollTopButton);
 
+document.addEventListener("input", (event) => {
+  const search = event.target.closest?.("[data-free-chain-search]");
+  if (!search) return;
+  const modal = search.closest("#free-chain-modal");
+  const query = String(search.value || "").trim().toLocaleLowerCase("de-DE");
+  modal?.querySelectorAll("[data-free-chain-item]").forEach((item) => {
+    item.classList.toggle("hidden", Boolean(query) && !String(item.dataset.freeChainSearchtext || "").includes(query));
+  });
+});
+
+document.addEventListener("change", (event) => {
+  const input = event.target.closest?.("[data-free-chain-select]");
+  if (!input) return;
+  updateFreeChainSelectionCount(input.closest("#free-chain-modal"));
+});
+
 document.addEventListener("click", (event) => {
   const supportModalButton = event.target.closest("[data-support-modal-action]");
   if (supportModalButton) {
@@ -33506,6 +33665,18 @@ app.addEventListener("click", (event) => {
   if (action === "export-backup") exportBackup();
   if (action === "import-team-file") document.querySelector("#team-file")?.click();
   if (action === "import-backup") document.querySelector("#backup-file")?.click();
+  if (action === "close-free-chain-modal") {
+    closeFreeChainModal();
+  }
+  if (action === "clear-free-chain-selection") {
+    const modal = button.closest("#free-chain-modal");
+    modal?.querySelectorAll("[data-free-chain-select]").forEach((input) => { input.checked = false; });
+    updateFreeChainSelectionCount(modal);
+  }
+  if (action === "apply-free-chain-selection") {
+    const modal = button.closest("#free-chain-modal");
+    applyFreeChainSelection(button.dataset.freeChainRow, modal);
+  }
   if (action === "choose-text-source") {
     syncVisibleInputs();
     openTextSource(button.dataset.rasterRow, button.dataset.rasterColumn, button.dataset.textSource);

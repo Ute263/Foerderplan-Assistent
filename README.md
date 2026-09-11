@@ -12,3 +12,13 @@ Die App ist als installierbare Web-App vorbereitet. `manifest.webmanifest`, `pwa
 ## Technische Bereinigung 11.09.2026
 
 Die frühere Bibliothek `textModules.js` mit einzelnen vorgefertigten Textbausteinen ist nicht mehr Bestandteil der produktiven Förderlogik. Automatische Vorschläge basieren auf den Förderketten bzw. dem Endkatalog. Alte Entwürfe, die noch die Arbeitsweise `prefabModules` gespeichert haben, werden beim Öffnen auf das Kompetenzraster zurückgeführt. Veraltete Service-Worker-Verweise auf den früheren `assets/`-Ordner und die alte Word-Vorlage wurden entfernt. Der Word-Export selbst bleibt erhalten und wird weiterhin clientseitig erzeugt.
+
+
+## Arbeitsweisen im Förderplan (v299)
+
+- **Mit Kompetenzraster arbeiten:** automatische Vorschläge aus den hinterlegten Förderketten.
+- **Förderplan frei zusammenstellen:** vorhandene Förderketten können ohne Kompetenzraster selbst ausgewählt und gemeinsam in Ist-Stand, Ziele, Maßnahmen und Evaluation übernommen werden.
+- **Mit eigenen Bausteinen arbeiten:** lokal gespeicherte persönliche Bausteine.
+- **Frei schreiben / Text überarbeiten:** manuelle Texteingabe und Überarbeitung.
+
+Die frühere Bibliothek einzelner vorgefertigter Textbausteine (`textModules.js`) wird nicht mehr verwendet.

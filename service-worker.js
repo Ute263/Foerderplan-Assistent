@@ -1,4 +1,4 @@
-const CACHE_NAME = "foerderplan-assistent-cache-v298";
+const CACHE_NAME = "foerderplan-assistent-cache-v299";
 
 const APP_SHELL = [
   "./",
@@ -8,7 +8,7 @@ const APP_SHELL = [
   "./endkatalog.js",
   "./praxisMassnahmen.js",
   "./data.js",
-  "./script.js?v=295",
+  "./script.js?v=299",
   "./pwa.js",
   "./manifest.webmanifest",
   "./icon.svg",
