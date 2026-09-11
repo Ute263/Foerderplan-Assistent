@@ -14,11 +14,6 @@ window.FOERDERPLAN_DATA = (() => {
     copyright: "© 2026 Ute Holzschneider-Riedl. Alle Rechte vorbehalten."
   };
 
-  const textModuleLibrary = window.FOERDERPLAN_TEXT_MODULES || {};
-  const sentenceStarters = textModuleLibrary.sentenceStarters || {};
-  const textModuleMeta = textModuleLibrary.meta || {};
-  const textModules = textModuleLibrary.areas || {};
-
   const columns = ["stand", "goals", "measures", "evaluation"];
   const columnLabels = {
     stand: "Entwicklungs- bzw. Ist-Stand",
@@ -4231,9 +4226,6 @@ window.FOERDERPLAN_DATA = (() => {
 
   return {
     appMeta,
-    sentenceStarters,
-    textModuleMeta,
-    textModules,
     storageKey: "foerderplanAssistent:drafts:v2",
     customBlocksKey: "foerderplanAssistent:customBlocks:v1",
     childRecordsKey: "foerderplanAssistent:childRecords:v1",

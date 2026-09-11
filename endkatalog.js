@@ -4177,10 +4177,10 @@ window.FOERDERPLAN_ENDKATALOG = (() => {
       ...gruppenSaetzeKognition,
       ...gruppenSaetzeWeitereFaecherHSU
     ];
-    const textModules = window.FOERDERPLAN_TEXT_MODULES?.areas || {};
-
     return areas.flatMap((areaName) => {
-      const moduleTopics = moduleTopicsForArea(areaName, textModules);
+      // Förderketten sind die alleinige automatische Grundlage.
+      // Die frühere Ergänzung durch einzelne Textbausteine wurde bewusst entfernt.
+      const moduleTopics = [];
       const chainTopics = supportChains
         .filter((chain) => chain.bereich === areaName)
         .map((chain) => ({

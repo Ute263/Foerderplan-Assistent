@@ -1,11 +1,10 @@
-const CACHE_NAME = "foerderplan-assistent-cache-v297";
+const CACHE_NAME = "foerderplan-assistent-cache-v298";
 
 const APP_SHELL = [
   "./",
   "./index.html",
   "./style.css?v=193",
   "./foerderketten.js",
-  "./textModules.js?v=196",
   "./endkatalog.js",
   "./praxisMassnahmen.js",
   "./data.js",
@@ -14,13 +13,7 @@ const APP_SHELL = [
   "./manifest.webmanifest",
   "./icon.svg",
   "./icon-192.png",
-  "./icon-512.png",
-  "./assets/app-icon.svg",
-  "./assets/icon-192.png",
-  "./assets/icon-512.png",
-  "./assets/icon-maskable-512.png",
-  "./assets/apple-touch-icon.png",
-  "./assets/foerderplan-word-vorlage.docx"
+  "./icon-512.png"
 ];
 
 const APP_SHELL_URLS = new Set(APP_SHELL.map((path) => new URL(path, self.location.href).href));

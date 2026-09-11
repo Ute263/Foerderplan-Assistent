@@ -38,7 +38,6 @@ const WORK_DIRECTORY_HANDLE_KEY = "selectedWorkDirectory";
 const WORK_DIRECTORY_AUTO_SYNC_KEY = "foerderplanungDirekt:autoSaveWorkDirectory:v1";
 const WORK_DIRECTORY_FILE_NAME_KEY = "foerderplanungDirekt:workDirectoryFileName:v1";
 const SPEECH_TERM_DISPLAY_MODE_KEY = "foerderplanungDirekt:speechTermDisplayMode:v1";
-const WORD_TEMPLATE_PATH = "assets/foerderplan-word-vorlage.docx";
 
 let connectedWorkFileHandle = null;
 let pendingConnectedWorkFileHandle = null;
@@ -94,14 +93,6 @@ const inputModeOptions = [
     description: "Kompetenzen einschätzen und daraus passende Vorschläge für den Förderplan erstellen."
   },
   {
-    key: "prefabModules",
-    label: "Mit vorgefertigten Bausteinen arbeiten",
-    shortLabel: "Vorgefertigte Bausteine",
-    textSource: "fixed",
-    fieldButton: "Bausteine auswählen",
-    description: "Passende Textbausteine auswählen, anpassen und übernehmen."
-  },
-  {
     key: "customModules",
     label: "Mit eigenen Bausteinen arbeiten",
     shortLabel: "Eigene Bausteine",
@@ -120,8 +111,6 @@ const inputModeOptions = [
 ];
 const defaultInputMode = "competenceRaster";
 
-const textModules = DATA.textModules || {};
-const textModuleMeta = DATA.textModuleMeta || {};
 const competenceHints = DATA.competenceHints || {};
 const endkatalogData = window.FOERDERPLAN_ENDKATALOG || {};
 const endkatalogEntries = Array.isArray(endkatalogData.katalog)
@@ -147,7 +136,6 @@ const completeSupportGroups = uniqueSupportGroups([
 ]);
 const supportAreaIntros = window.FOERDERPLAN_SUPPORT_INTROS || {};
 const suggestionVariantOffsets = new Map();
-const areaBlocks = textModules;
 
 const germanCompetenceTopics = {
   "Klasse 1/2": [
@@ -7304,6 +7292,9 @@ function normalizeRasterRow(value = {}) {
 }
 
 function normalizeInputMode(value) {
+  // Alte Entwürfe konnten die inzwischen entfernte Arbeitsweise "prefabModules" speichern.
+  // Diese wird bewusst auf das Kompetenzraster migriert, weil Förderketten die fachliche Grundlage sind.
+  if (value === "prefabModules") return defaultInputMode;
   return inputModeOptions.some((option) => option.key === value) ? value : defaultInputMode;
 }
 
@@ -8196,13 +8187,16 @@ function competenceTopicsForArea(area) {
       .filter(Boolean);
     return [...new Set([...visibleTopics, ...customTopics])];
   }
-  const libraryTopics = Object.keys(topicLibraryForArea(area, gradeBandForPlan(), areaBlocks));
+  const chainTopics = completeSupportChains
+    .filter((chain) => chain.bereich === area)
+    .map((chain) => String(chain.kompetenz || "").trim())
+    .filter(Boolean);
   const savedTopics = [
     ...Object.keys(plan.competenceRatings?.[area] || {}),
     ...Object.keys(plan.competenceObservations?.[area] || {}),
     ...(plan.competenceCustomTopics?.[area] || [])
   ];
-  return [...new Set([...libraryTopics, ...savedTopics].map((topic) => String(topic || "").trim()).filter(Boolean))];
+  return [...new Set([...chainTopics, ...savedTopics].map((topic) => String(topic || "").trim()).filter(Boolean))];
 }
 
 function hasCompetenceData() {
@@ -8623,214 +8617,72 @@ function renderTextSourceSelector(row, column) {
 }
 
 function renderBlockPanel(row, column) {
-  const areaLibrary = areaBlocks[row] || {};
-  const gradeLevels = ["Klasse 1/2", "Klasse 3/4"].filter((grade) => areaLibrary[grade]);
-  const selectedGrade = preferredModuleGrade(gradeLevels);
-  const selectedTopicLibrary = selectedGrade ? areaLibrary[selectedGrade] : areaLibrary;
-  const topics = Object.entries(selectedTopicLibrary || {});
-  const selectedTopic = topics.find(([, fields]) => (fields[column.key] || []).length)?.[0] || topics[0]?.[0] || "";
   const customModules = customModulesFor(row, column.key);
-  const topicGroups = gradeLevels.length
-    ? gradeLevels.map((grade) => [grade, areaLibrary[grade]])
-    : [["", areaLibrary]];
-  const blocks = topicGroups.flatMap(([grade, topicLibrary]) =>
-    Object.entries(topicLibrary || {}).flatMap(([topicName, fields]) =>
-      (fields[column.key] || []).map((moduleEntry) => ({
-        grade,
-        topicName,
-        module: normalizeTextModuleEntry(moduleEntry)
-      }))
-    )
-  );
-  const hasVisibleFixedBlocks = blocks.some(({ grade, topicName }) => grade === selectedGrade && topicName === selectedTopic);
   const hasCustomBlocks = customModules.length > 0;
-  const workflowSteps = ["Bereich wählen", "Bausteine auswählen", "Text erstellen", "übernehmen oder anhängen", "nächsten Bereich wählen"];
+  const workflowSteps = ["Bausteine auswählen", "Text erstellen", "übernehmen oder anhängen"];
   const nextStepMarkup = `
     <div class="suggestion-apply-choice block-selection-next-step hidden" data-block-selection-next-step>
-      <span>Text wurde angehängt. Du kannst jetzt einen weiteren Bereich auswählen oder das Bausteinfenster schließen.</span>
+      <span>Text wurde angehängt. Du kannst weitere eigene Bausteine auswählen oder das Fenster schließen.</span>
       <div class="actions">
-        <button class="small-button secondary-button" type="button" data-action="continue-block-selection">Weiteren Bereich auswählen</button>
+        <button class="small-button secondary-button" type="button" data-action="continue-block-selection">Weitere Bausteine auswählen</button>
         <button class="small-button quiet-button" type="button" data-action="finish-block-selection-work">Bausteinfenster schließen</button>
       </div>
     </div>
   `;
   return `
     <div class="idea-panel block-panel hidden" data-block-panel="${escapeHtml(row)}|${column.key}" data-module-row="${escapeHtml(row)}" data-module-column="${column.key}">
-        <div class="block-panel-header">
-          <div>
-            <strong>Text mit Bausteinen ergänzen</strong>
-            <span>${escapeHtml(row)} – ${escapeHtml(moduleFieldLabels[column.key])}</span>
-          </div>
-          <button class="small-button quiet-button" type="button" data-action="close-blocks" data-raster-row="${escapeHtml(row)}" data-raster-column="${column.key}">Schließen</button>
+      <div class="block-panel-header">
+        <div>
+          <strong>Eigene Bausteine</strong>
+          <span>${escapeHtml(row)} – ${escapeHtml(moduleFieldLabels[column.key])}</span>
         </div>
-        <section class="block-workflow-note" aria-label="Schrittweise Arbeit mit Bausteinen">
-          <p>Dieses Fenster eignet sich zum gezielten Ergänzen einzelner Textteile. Wähle einen Bereich aus, erstelle einen Textvorschlag und übernimm ihn. Danach kannst du einen weiteren Bereich auswählen und den nächsten Text an den vorhandenen Text anhängen.</p>
-          <p>Für einen vollständigen automatischen Vorschlag nutze das Kompetenzraster. Das Bausteinfenster ist für gezielte Ergänzungen gedacht.</p>
-          <ol class="block-workflow-steps">
-            ${workflowSteps.map((step) => `<li>${escapeHtml(step)}</li>`).join("")}
-          </ol>
-        </section>
-        <div class="block-tab-nav" role="tablist" aria-label="Bausteinarten">
-          <button class="block-tab-button active" type="button" role="tab" aria-selected="true" data-action="switch-block-tab" data-block-tab="fixed">Vorgefertigte Bausteine</button>
-          <button class="block-tab-button" type="button" role="tab" aria-selected="false" data-action="switch-block-tab" data-block-tab="custom">Eigene Bausteine</button>
-        </div>
-        <div class="block-tab-panel" data-block-tab-panel="fixed">
-          <div class="block-filters">
-            ${gradeLevels.length ? `
-              <label class="block-filter">
-                <span>Klassenstufe</span>
-                <select data-module-grade>
-                  ${gradeLevels.map((grade) => `
-                    <option value="${escapeHtml(grade)}"${grade === selectedGrade ? " selected" : ""}>${escapeHtml(grade)}</option>
-                  `).join("")}
-                </select>
-              </label>
-            ` : ""}
-            <label class="block-filter">
-              <span>Bereich / Thema</span>
-              <select data-module-topic>
-                ${topics.length ? topics.map(([topicName]) => `
-                  <option value="${escapeHtml(topicName)}"${topicName === selectedTopic ? " selected" : ""}>${escapeHtml(moduleTopicDisplayName(row, topicName))}</option>
-                `).join("") : `<option value="">Keine Themen hinterlegt</option>`}
-              </select>
-            </label>
-            <label class="block-filter">
-              <span>Bausteine durchsuchen</span>
-              <input type="search" data-module-search placeholder="Suchbegriff eingeben" autocomplete="off" />
-            </label>
-          </div>
-          <p class="field-help block-selection-flow-status" data-block-selection-flow-status>Beim Bereichswechsel bleibt deine bisherige Auswahl erhalten. Nutze „Auswahl für neuen Bereich leeren“, wenn du für den nächsten Abschnitt neu starten möchtest.</p>
-          ${blocks.length ? `
-          <div class="block-selection-toolbar">
-            <button class="small-button primary" type="button" data-action="create-block-selection-text">Text aus Auswahl erstellen</button>
-            <button class="small-button quiet-button" type="button" data-action="reset-block-selection">Auswahl für neuen Bereich leeren</button>
-          </div>
-          <section class="block-selection-basket" data-block-selection-basket>
-            <strong>Ausgewählte Bausteine</strong>
-            <p>Noch keine Bausteine ausgewählt.</p>
-          </section>
-          <div class="block-list">
-            ${blocks.map(({ grade, topicName, module }) => {
-              const displayTopicName = moduleTopicDisplayName(row, topicName);
-              const title = fixedModuleTitleFromText(module.text, displayTopicName);
-              const preview = fixedModulePreviewFromText(module.text);
-              const collapsiblePreview = isLongFixedModulePreview(preview);
-              return `
-              <div class="block-list-item block-module-card${grade === selectedGrade && topicName === selectedTopic ? "" : " hidden"}" data-module-item data-block-module-card data-module-grade="${escapeHtml(grade)}" data-module-topic="${escapeHtml(topicName)}" data-module-search="${escapeHtml([row, moduleFieldLabels[column.key], topicName, displayTopicName, textModuleSearchText(module)].join(" ").toLocaleLowerCase("de-DE"))}" data-module-text="${escapeHtml(JSON.stringify(module))}">
-                <input class="block-select-checkbox" type="checkbox" data-module-select data-module-text="${escapeHtml(JSON.stringify(module))}" aria-label="${escapeHtml(`Baustein auswählen: ${module.text}`)}" />
-                <div class="custom-module-content">
-                  <strong>${escapeHtml(title)}</strong>
-                  <span class="custom-module-topic">${escapeHtml(row)} · ${escapeHtml(moduleFieldLabels[column.key])}${topicName ? ` · ${escapeHtml(displayTopicName)}` : ""}</span>
-                  ${preview ? `
-                    <p class="fixed-module-preview${collapsiblePreview ? " is-collapsible" : ""}" data-fixed-module-preview>${escapeHtml(preview)}</p>
-                    ${collapsiblePreview ? `<button class="inline-text-button" type="button" data-action="toggle-fixed-module-preview" aria-expanded="false">mehr anzeigen</button>` : ""}
-                  ` : ""}
-                </div>
-                <div class="custom-module-actions">
-                  <button class="small-button primary" type="button" data-action="preview-block-module">Auswählen</button>
-                </div>
-                <div class="suggestion-apply-choice custom-module-choice hidden" data-block-module-choice>
-                  <span>Dieses Feld enthält bereits Text. Möchten Sie den vorhandenen Text ersetzen oder den Baustein anhängen?</span>
-                  <div class="actions">
-                    <button class="small-button secondary-button" type="button" data-action="confirm-block-module-apply" data-apply-mode="append">An vorhandenen Text anhängen</button>
-                    <button class="small-button primary" type="button" data-action="confirm-block-module-apply" data-apply-mode="replace">Ersetzen</button>
-                    <button class="small-button quiet-button" type="button" data-action="cancel-block-module-apply">Abbrechen</button>
-                  </div>
-                </div>
-              </div>
-            `;
-            }).join("")}
-          </div>
-          <div class="block-module-editor hidden" data-block-module-editor>
-            <div class="block-selection-preview-header">
-              <strong>Vorgefertigten Baustein anpassen</strong>
-              <span>Der Originalbaustein im Katalog bleibt unverändert.</span>
-            </div>
-            <textarea data-block-module-editor-text></textarea>
-            <input type="hidden" data-block-module-editor-topic />
-            <div class="actions">
-              <button class="small-button primary" type="button" data-action="apply-edited-block-module" data-apply-mode="replace">Übernehmen</button>
-              <button class="small-button secondary-button" type="button" data-action="apply-edited-block-module" data-apply-mode="append">An vorhandenen Text anhängen</button>
-              <button class="small-button secondary-button" type="button" data-action="save-edited-block-as-custom">Als eigenen Baustein speichern</button>
-              <button class="small-button quiet-button" type="button" data-action="cancel-block-module-editor">Abbrechen</button>
-            </div>
-            <div class="suggestion-apply-choice hidden" data-block-module-editor-choice>
-              <span>Dieses Feld enthält bereits Text. Möchten Sie den vorhandenen Text ersetzen oder den neuen Text anhängen?</span>
-              <div class="actions">
-                <button class="small-button secondary-button" type="button" data-action="confirm-edited-block-module" data-apply-mode="append">An vorhandenen Text anhängen</button>
-                <button class="small-button primary" type="button" data-action="confirm-edited-block-module" data-apply-mode="replace">Ersetzen</button>
-                <button class="small-button quiet-button" type="button" data-action="cancel-edited-block-module-choice">Abbrechen</button>
-              </div>
-            </div>
-            <p class="field-help" data-block-module-editor-status aria-live="polite"></p>
-          </div>
-          <div class="block-selection-preview hidden" data-block-selection-preview>
-            <div class="block-selection-preview-header">
-              <strong>${escapeHtml(blockSelectionPreviewTitle(column.key))}</strong>
-              <span>Du kannst den Text vor der Übernahme anpassen.</span>
-            </div>
-            <p class="field-help" data-block-selection-message></p>
-            <textarea data-block-selection-raw></textarea>
-            <div class="actions">
-              <button class="small-button primary" type="button" data-action="apply-block-selection" data-apply-mode="replace">Text übernehmen</button>
-              <button class="small-button secondary-button" type="button" data-action="apply-block-selection" data-apply-mode="append">An vorhandenen Text anhängen</button>
-              <button class="small-button secondary-button" type="button" data-action="save-block-selection-as-custom">Als eigenen Baustein speichern</button>
-              <button class="small-button quiet-button" type="button" data-action="cancel-block-selection-preview">Abbrechen</button>
-            </div>
-            <p class="field-help" data-block-selection-status aria-live="polite"></p>
-            <div class="suggestion-apply-choice hidden" data-block-selection-choice>
-              <span>Das Feld enthält bereits Text. Ersetzen oder anhängen?</span>
-              <div class="actions">
-                <button class="small-button primary" type="button" data-action="confirm-block-selection" data-apply-mode="replace">Ersetzen</button>
-                <button class="small-button secondary-button" type="button" data-action="confirm-block-selection" data-apply-mode="append">An vorhandenen Text anhängen</button>
-                <button class="small-button quiet-button" type="button" data-action="cancel-block-selection-choice">Abbrechen</button>
-              </div>
-            </div>
-            ${nextStepMarkup}
-          </div>
-          ` : `<p class="field-help">Für diesen Bereich und dieses Feld sind noch keine vorgefertigten Bausteine hinterlegt.</p>`}
-          <p class="field-help${hasVisibleFixedBlocks ? " hidden" : ""}" data-module-empty>Für diese Klassenstufe, dieses Thema und Feld sind noch keine Beispielbausteine hinterlegt.</p>
-        </div>
-        <div class="block-tab-panel hidden" data-block-tab-panel="custom">
-          <div class="block-selection-toolbar">
-            <button class="small-button secondary-button" type="button" data-action="show-custom-module-form">Eigenen Baustein erstellen</button>
-            <button class="small-button primary" type="button" data-action="create-block-selection-text">Text aus Auswahl erstellen</button>
-            <button class="small-button quiet-button" type="button" data-action="reset-block-selection">Auswahl für neuen Bereich leeren</button>
-          </div>
-          <p class="field-help block-selection-flow-status" data-block-selection-flow-status>Eigene Bausteine bleiben im Auswahlkorb, bis du sie bewusst leerst.</p>
-          <section class="block-selection-basket" data-block-selection-basket>
-            <strong>Ausgewählte Bausteine</strong>
-            <p>Noch keine Bausteine ausgewählt.</p>
-          </section>
-          ${renderCustomModuleSection(row, column, customModules)}
-          <div class="block-selection-preview hidden" data-block-selection-preview>
-            <div class="block-selection-preview-header">
-              <strong>${escapeHtml(blockSelectionPreviewTitle(column.key))}</strong>
-              <span>Du kannst den Text vor der Übernahme anpassen.</span>
-            </div>
-            <p class="field-help" data-block-selection-message></p>
-            <textarea data-block-selection-raw></textarea>
-            <div class="actions">
-              <button class="small-button primary" type="button" data-action="apply-block-selection" data-apply-mode="replace">Text übernehmen</button>
-              <button class="small-button secondary-button" type="button" data-action="apply-block-selection" data-apply-mode="append">An vorhandenen Text anhängen</button>
-              <button class="small-button secondary-button" type="button" data-action="save-block-selection-as-custom">Als eigenen Baustein speichern</button>
-              <button class="small-button quiet-button" type="button" data-action="cancel-block-selection-preview">Abbrechen</button>
-            </div>
-            <p class="field-help" data-block-selection-status aria-live="polite"></p>
-            <div class="suggestion-apply-choice hidden" data-block-selection-choice>
-              <span>Das Feld enthält bereits Text. Ersetzen oder anhängen?</span>
-              <div class="actions">
-                <button class="small-button primary" type="button" data-action="confirm-block-selection" data-apply-mode="replace">Ersetzen</button>
-                <button class="small-button secondary-button" type="button" data-action="confirm-block-selection" data-apply-mode="append">An vorhandenen Text anhängen</button>
-                <button class="small-button quiet-button" type="button" data-action="cancel-block-selection-choice">Abbrechen</button>
-              </div>
-            </div>
-            ${nextStepMarkup}
-          </div>
-          ${renderCustomModuleForm(row, column)}
-          ${hasCustomBlocks ? "" : `<p class="field-help">Eigene Bausteine für ${escapeHtml(row)} – ${escapeHtml(moduleFieldLabels[column.key])} können über die Maske ergänzt werden.</p>`}
-        </div>
+        <button class="small-button quiet-button" type="button" data-action="close-blocks" data-raster-row="${escapeHtml(row)}" data-raster-column="${column.key}">Schließen</button>
       </div>
+      <section class="block-workflow-note" aria-label="Arbeit mit eigenen Bausteinen">
+        <p>Hier kannst du selbst gespeicherte Bausteine gezielt ergänzen. Automatische Vorschläge werden ausschließlich über das Kompetenzraster und die hinterlegten Förderketten erstellt.</p>
+        <ol class="block-workflow-steps">
+          ${workflowSteps.map((step) => `<li>${escapeHtml(step)}</li>`).join("")}
+        </ol>
+      </section>
+      <div class="block-tab-panel" data-block-tab-panel="custom">
+        <div class="block-selection-toolbar">
+          <button class="small-button secondary-button" type="button" data-action="show-custom-module-form">Eigenen Baustein erstellen</button>
+          <button class="small-button primary" type="button" data-action="create-block-selection-text">Text aus Auswahl erstellen</button>
+          <button class="small-button quiet-button" type="button" data-action="reset-block-selection">Auswahl leeren</button>
+        </div>
+        <p class="field-help block-selection-flow-status" data-block-selection-flow-status>Eigene Bausteine bleiben im Auswahlkorb, bis du sie bewusst leerst.</p>
+        <section class="block-selection-basket" data-block-selection-basket>
+          <strong>Ausgewählte Bausteine</strong>
+          <p>Noch keine Bausteine ausgewählt.</p>
+        </section>
+        ${renderCustomModuleSection(row, column, customModules)}
+        <div class="block-selection-preview hidden" data-block-selection-preview>
+          <div class="block-selection-preview-header">
+            <strong>${escapeHtml(blockSelectionPreviewTitle(column.key))}</strong>
+            <span>Du kannst den Text vor der Übernahme anpassen.</span>
+          </div>
+          <p class="field-help" data-block-selection-message></p>
+          <textarea data-block-selection-raw></textarea>
+          <div class="actions">
+            <button class="small-button primary" type="button" data-action="apply-block-selection" data-apply-mode="replace">Text übernehmen</button>
+            <button class="small-button secondary-button" type="button" data-action="apply-block-selection" data-apply-mode="append">An vorhandenen Text anhängen</button>
+            <button class="small-button quiet-button" type="button" data-action="cancel-block-selection-preview">Abbrechen</button>
+          </div>
+          <p class="field-help" data-block-selection-status aria-live="polite"></p>
+          <div class="suggestion-apply-choice hidden" data-block-selection-choice>
+            <span>Das Feld enthält bereits Text. Ersetzen oder anhängen?</span>
+            <div class="actions">
+              <button class="small-button primary" type="button" data-action="confirm-block-selection" data-apply-mode="replace">Ersetzen</button>
+              <button class="small-button secondary-button" type="button" data-action="confirm-block-selection" data-apply-mode="append">An vorhandenen Text anhängen</button>
+              <button class="small-button quiet-button" type="button" data-action="cancel-block-selection-choice">Abbrechen</button>
+            </div>
+          </div>
+          ${nextStepMarkup}
+        </div>
+        ${renderCustomModuleForm(row, column)}
+        ${hasCustomBlocks ? "" : `<p class="field-help">Eigene Bausteine für ${escapeHtml(row)} – ${escapeHtml(moduleFieldLabels[column.key])} können über die Maske ergänzt werden.</p>`}
+      </div>
+    </div>
   `;
 }
 
@@ -10234,10 +10086,10 @@ function moduleTopicCandidatesForComposer(area, gradeBand, topic) {
   return [...new Set(candidates.map((item) => String(item || "").trim()).filter(Boolean))];
 }
 
-function moduleFieldsForComposerTopic(area, gradeBand, topic) {
-  const library = topicLibraryForArea(area, gradeBand, areaBlocks);
-  const candidates = moduleTopicCandidatesForComposer(area, gradeBand, topic);
-  return candidates.map((candidate) => library[candidate]).find(Boolean) || null;
+function moduleFieldsForComposerTopic() {
+  // Die frühere Rückfallebene mit einzelnen vorgefertigten Textbausteinen wurde entfernt.
+  // Automatische Vorschläge werden ausschließlich aus Förderketten erzeugt.
+  return null;
 }
 
 function moduleSuggestionText(items = [], variantOffset = 0) {
@@ -16560,7 +16412,6 @@ function renderPrintPage() {
           <button class="primary" type="button" data-action="open-print-dialog">Förderplan drucken / PDF</button>
           <button class="secondary-button" type="button" data-action="open-competence-print-dialog">Kompetenzraster drucken</button>
           <button class="secondary-button" type="button" data-action="export-word-plan">Word exportieren</button>
-          <button class="secondary-button" type="button" data-action="download-word-template">Word-Vorlage herunterladen</button>
         </div>
         ${outputHintsOpen ? `
           <section class="print-output-hints" aria-label="Hinweise zur Ausgabe">
@@ -17322,7 +17173,7 @@ function openExclusiveRasterPanel(row, panel, type, keySuffix) {
   return opening;
 }
 
-function setBlockTab(panel, tab = "fixed") {
+function setBlockTab(panel, tab = "custom") {
   if (!panel) return;
   panel.querySelectorAll("[data-block-tab-panel]").forEach((item) => {
     item.classList.toggle("hidden", item.dataset.blockTabPanel !== tab);
@@ -17332,7 +17183,6 @@ function setBlockTab(panel, tab = "fixed") {
     item.classList.toggle("active", active);
     item.setAttribute("aria-selected", active ? "true" : "false");
   });
-  if (tab === "fixed") filterBlockPanel(panel);
 }
 
 function markTextSource(row, columnKey, source) {
@@ -17422,11 +17272,10 @@ function openBlockModal(row, columnKey, source = "fixed", options = {}) {
   `;
   modal.querySelector(".block-module-modal-body").appendChild(panel);
   app.appendChild(modal);
-  setBlockTab(panel, source === "custom" ? "custom" : "fixed");
+  setBlockTab(panel, "custom");
   activeRasterPanel = { row, type: "block", key: `block:${row}|${columnKey}` };
   updateTextSourceButtonState(row, columnKey, source, true);
   markTextSource(row, columnKey, source);
-  if (source === "fixed") filterBlockPanel(panel);
   updateBlockSelectionBasket(panel);
   preselectBlockPanelModules(panel, options.preselectModules || []);
   modal.querySelector("[data-module-search]")?.focus();
@@ -17442,8 +17291,8 @@ function openTextSource(row, columnKey, source) {
     renderSmoothedFieldSuggestion(row, columnKey);
     return;
   }
-  if (source === "fixed" || source === "custom") {
-    openBlockModal(row, columnKey, source);
+  if (source === "custom") {
+    openBlockModal(row, columnKey, "custom");
   }
 }
 
@@ -17671,7 +17520,7 @@ function selectedModulesFromPanel(panel) {
       const topic = card?.dataset.moduleTopic || "";
       const grade = card?.dataset.moduleGrade || "";
       const area = panel.dataset.moduleRow || "";
-      const source = card?.hasAttribute("data-custom-module-item") ? "Eigene Bausteine" : "Vorgefertigte Bausteine";
+      const source = "Eigene Bausteine";
       return {
         key: selectedModuleSelectionKey(module, index),
         title,
@@ -17737,7 +17586,7 @@ function updateBlockTopicOptions(panel) {
   const row = panel.dataset.moduleRow;
   const column = panel.dataset.moduleColumn;
   const grade = panel.querySelector("[data-module-grade]")?.value || "";
-  const areaLibrary = areaBlocks[row] || {};
+  const areaLibrary = {};
   const topicLibrary = grade ? areaLibrary[grade] || {} : areaLibrary;
   const topicNames = Object.keys(topicLibrary);
   const topicSelect = panel.querySelector("[data-module-topic]");
@@ -17948,17 +17797,7 @@ function selectedModuleTopicOrder(area, topic, grade = "") {
     .map((competenceTopic) => canonicalCompetenceTopic(normalizedArea, competenceTopic));
   const competenceIndex = competenceTopics.indexOf(requestedTopic);
   if (competenceIndex >= 0) return competenceIndex;
-  const areaLibrary = areaBlocks[normalizedArea] || {};
-  const topicLibrary = grade && areaLibrary[grade] ? areaLibrary[grade] : areaLibrary;
-  const topicNames = Object.keys(topicLibrary || {});
-  const exactIndex = topicNames.indexOf(normalizedTopic);
-  if (exactIndex >= 0) return exactIndex;
-  const normalizedLower = normalizedTopic.toLocaleLowerCase("de-DE");
-  const fuzzyIndex = topicNames.findIndex((topicName) => {
-    const topicLower = topicName.toLocaleLowerCase("de-DE");
-    return topicLower.includes(normalizedLower) || normalizedLower.includes(topicLower);
-  });
-  return fuzzyIndex >= 0 ? fuzzyIndex : 999;
+  return 999;
 }
 
 function selectedModuleTopicLabel(entry) {
@@ -31333,17 +31172,6 @@ function exportSaveStatus(label, result) {
   return `${label} konnte nicht gespeichert werden.`;
 }
 
-function downloadWordTemplate() {
-  const link = document.createElement("a");
-  link.href = WORD_TEMPLATE_PATH;
-  link.download = "foerderplan-word-vorlage.docx";
-  document.body.appendChild(link);
-  link.click();
-  link.remove();
-  statusMessage = "Word-Vorlage wurde heruntergeladen. Diese Vorlage enthält keine Förderplandaten.";
-  if (currentStep === "print") renderPrintPage();
-}
-
 function openWordExportDialog() {
   syncVisibleInputs();
   if (!wordExportDialog) {
@@ -33645,7 +33473,6 @@ app.addEventListener("click", (event) => {
   if (action === "open-print-dialog") openPrintDialog();
   if (action === "open-competence-print-dialog") openPrintDialog("competence");
   if (action === "print-id-mapping") printIdMappingList();
-  if (action === "download-word-template") downloadWordTemplate();
   if (action === "export-word-plan") openWordExportDialog();
   if (action === "dismiss-work-file-notice") {
     localStorage.setItem(WORK_FILE_NOTICE_KEY, "true");
