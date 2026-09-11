@@ -22,3 +22,16 @@ Die frühere Bibliothek `textModules.js` mit einzelnen vorgefertigten Textbauste
 - **Frei schreiben / Text überarbeiten:** manuelle Texteingabe und Überarbeitung.
 
 Die frühere Bibliothek einzelner vorgefertigter Textbausteine (`textModules.js`) wird nicht mehr verwendet.
+
+
+## v300 – Kombination von Wahrnehmungs-Förderketten
+
+- Kombinationen ohne eigene Mehrfach-Förderkette werden aus den vorhandenen Einzelketten vollständig zusammengesetzt.
+- Der Ist-Stand wird jetzt bereichsspezifisch für Wahrnehmung formuliert; der versehentliche Rückgriff auf die Mathematik-1/2-Ist-Stand-Funktion wurde entfernt.
+- Ziele, Maßnahmen und Evaluation werden weiterhin aus den passenden Einzelketten übernommen.
+- Exakt vorhandene, geprüfte Wahrnehmungs-Förderketten haben weiterhin Vorrang.
+
+
+## Förderketten und manuelle Bausteine
+
+Die automatische Förderplanung verwendet ausschließlich die hinterlegten Förderketten bzw. den Endkatalog. Die Datei `textModules.js` ist als **manuelle Bausteinbibliothek** eingebunden: Über „Einzelne Bausteine frei auswählen“ können Formulierungen gezielt ausgewählt, angepasst und übernommen werden. Diese Einzelbausteine dienen **nicht** als automatischer Fallback für fehlende Förderketten und werden nicht automatisch mit Ketten vermischt.

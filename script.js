@@ -101,6 +101,14 @@ const inputModeOptions = [
     description: "Vorhandene Förderketten ohne Kompetenzraster selbst auswählen und zu einem Förderplan zusammenstellen."
   },
   {
+    key: "prefabModules",
+    label: "Einzelne Bausteine frei auswählen",
+    shortLabel: "Einzelne Bausteine",
+    textSource: "fixed",
+    fieldButton: "Bausteine auswählen",
+    description: "Einzelne vorgefertigte Formulierungen manuell auswählen, anpassen und übernehmen. Sie werden nicht automatisch mit Förderketten vermischt."
+  },
+  {
     key: "customModules",
     label: "Mit eigenen Bausteinen arbeiten",
     shortLabel: "Eigene Bausteine",
@@ -118,6 +126,10 @@ const inputModeOptions = [
   }
 ];
 const defaultInputMode = "competenceRaster";
+
+const textModules = DATA.textModules || {};
+const textModuleMeta = DATA.textModuleMeta || {};
+const areaBlocks = textModules;
 
 const competenceHints = DATA.competenceHints || {};
 const endkatalogData = window.FOERDERPLAN_ENDKATALOG || {};
@@ -6690,18 +6702,63 @@ function perceptionBaseTemplateForTopic(topic = "") {
   }) || null;
 }
 
+function composePerceptionSelectionIstStand(selectedTopics = []) {
+  const topics = new Set((selectedTopics || []).map((topic) => canonicalPerceptionCompetenceTopic(topic)).filter(Boolean));
+  const visualTopics = [
+    "Visuomotorische Koordination",
+    "Figur-Grund-Wahrnehmung",
+    "Wahrnehmungskonstanz",
+    "Raum-Lage-Wahrnehmung",
+    "Wahrnehmung räumlicher Beziehungen"
+  ].filter((topic) => topics.has(topic));
+  const auditoryTopics = [
+    "Auditive Differenzierung",
+    "Auditive Gliederung",
+    "Auditive Identifikation",
+    "Auditives Gedächtnis"
+  ].filter((topic) => topics.has(topic));
+  const bodyTopics = [
+    "Taktil-kinästhetische Wahrnehmung",
+    "Vestibuläre Wahrnehmung / Gleichgewicht"
+  ].filter((topic) => topics.has(topic));
+
+  const sentences = ["Im Bereich Wahrnehmung benötigt _ in mehreren ausgewählten Teilbereichen noch Unterstützung."];
+
+  if (visualTopics.length) {
+    const details = [];
+    if (topics.has("Visuomotorische Koordination")) details.push("visuelle Informationen gezielt in Bewegungen umzusetzen");
+    if (topics.has("Figur-Grund-Wahrnehmung")) details.push("Wesentliches in komplexeren Darstellungen sicher zu erkennen");
+    if (topics.has("Wahrnehmungskonstanz")) details.push("Formen oder Zeichen trotz veränderter Darstellung wiederzuerkennen");
+    if (topics.has("Raum-Lage-Wahrnehmung")) details.push("Lagebeziehungen und Richtungen sicher einzuordnen");
+    if (topics.has("Wahrnehmung räumlicher Beziehungen")) details.push("räumliche Beziehungen zwischen mehreren Elementen zu erfassen");
+    sentences.push(`Im visuellen Bereich fällt es #ihm/ihr# noch schwer, ${joinGermanList(details)}.`);
+  }
+
+  if (auditoryTopics.length) {
+    const details = [];
+    if (topics.has("Auditive Differenzierung")) details.push("ähnliche Geräusche oder Laute sicher zu unterscheiden");
+    if (topics.has("Auditive Gliederung")) details.push("gehörte Informationen zuverlässig zu gliedern");
+    if (topics.has("Auditive Identifikation")) details.push("bestimmte auditive Merkmale gezielt wiederzuerkennen");
+    if (topics.has("Auditives Gedächtnis")) details.push("gehörte Informationen zu behalten und abzurufen");
+    sentences.push(`Im auditiven Bereich benötigt _ Unterstützung, um ${joinGermanList(details)}.`);
+  }
+
+  if (bodyTopics.length) {
+    const details = [];
+    if (topics.has("Taktil-kinästhetische Wahrnehmung")) details.push("Tast- und Körperreize sicherer einzuordnen");
+    if (topics.has("Vestibuläre Wahrnehmung / Gleichgewicht")) details.push("Gleichgewichts- und Bewegungsreize sicherer zu verarbeiten");
+    sentences.push(`Bei körperbezogenen Wahrnehmungsanforderungen braucht #er/sie# noch Orientierung, um ${joinGermanList(details)}.`);
+  }
+
+  sentences.push("Klare, reduzierte Aufgabenstellungen, wiederkehrende Übungsformen und passende visuelle oder handelnde Hilfen unterstützen #ihn/sie# dabei, Wahrnehmungsinformationen strukturierter zu verarbeiten.");
+  return finalizeClearIstStandText(removeRepeatedSentences(sentences).join(" "));
+}
+
 function composedPerceptionSelectionSuggestion(entries = []) {
   const selectedTopics = selectedPerceptionTemplateTopics(entries);
   if (!selectedTopics.length) return null;
   const baseTemplates = selectedTopics.map((topic) => ({ topic, template: perceptionBaseTemplateForTopic(topic) }));
   if (baseTemplates.some((entry) => !entry.template)) return null;
-  const istStandModules = baseTemplates.map(({ topic, template }, index) => ({
-    area: "Wahrnehmung",
-    grade: "",
-    topic,
-    index,
-    text: splitGeneratedFieldText(template.istStand)[0] || template.istStand
-  }));
   const firstFieldItem = (template, fieldKey) => perceptionFocusTemplateFieldItems(template, fieldKey)[0] || "";
   return {
     template: { id: "", label: "Ausgewählte Wahrnehmungsbereiche" },
@@ -6710,7 +6767,7 @@ function composedPerceptionSelectionSuggestion(entries = []) {
     templateTopics: selectedTopics,
     visibleTopics: selectedTopics,
     suggestion: {
-      istStand: composeMath12SelectionIstStand(selectedTopics),
+      istStand: composePerceptionSelectionIstStand(selectedTopics),
       ziele: perceptionFocusListSuggestion(baseTemplates.map(({ template }) => firstFieldItem(template, "ziele")), "ziele"),
       massnahmen: perceptionFocusListSuggestion(baseTemplates.map(({ template }) => firstFieldItem(template, "massnahmen")), "massnahmen"),
       evaluation: perceptionFocusListSuggestion(baseTemplates.map(({ template }) => firstFieldItem(template, "evaluation")), "evaluation")
@@ -7300,9 +7357,6 @@ function normalizeRasterRow(value = {}) {
 }
 
 function normalizeInputMode(value) {
-  // Alte Entwürfe konnten die inzwischen entfernte Arbeitsweise "prefabModules" speichern.
-  // Diese wird bewusst auf das Kompetenzraster migriert, weil Förderketten die fachliche Grundlage sind.
-  if (value === "prefabModules") return defaultInputMode;
   return inputModeOptions.some((option) => option.key === value) ? value : defaultInputMode;
 }
 
@@ -8625,72 +8679,214 @@ function renderTextSourceSelector(row, column) {
 }
 
 function renderBlockPanel(row, column) {
+  const areaLibrary = areaBlocks[row] || {};
+  const gradeLevels = ["Klasse 1/2", "Klasse 3/4"].filter((grade) => areaLibrary[grade]);
+  const selectedGrade = preferredModuleGrade(gradeLevels);
+  const selectedTopicLibrary = selectedGrade ? areaLibrary[selectedGrade] : areaLibrary;
+  const topics = Object.entries(selectedTopicLibrary || {});
+  const selectedTopic = topics.find(([, fields]) => (fields[column.key] || []).length)?.[0] || topics[0]?.[0] || "";
   const customModules = customModulesFor(row, column.key);
+  const topicGroups = gradeLevels.length
+    ? gradeLevels.map((grade) => [grade, areaLibrary[grade]])
+    : [["", areaLibrary]];
+  const blocks = topicGroups.flatMap(([grade, topicLibrary]) =>
+    Object.entries(topicLibrary || {}).flatMap(([topicName, fields]) =>
+      (fields[column.key] || []).map((moduleEntry) => ({
+        grade,
+        topicName,
+        module: normalizeTextModuleEntry(moduleEntry)
+      }))
+    )
+  );
+  const hasVisibleFixedBlocks = blocks.some(({ grade, topicName }) => grade === selectedGrade && topicName === selectedTopic);
   const hasCustomBlocks = customModules.length > 0;
-  const workflowSteps = ["Bausteine auswählen", "Text erstellen", "übernehmen oder anhängen"];
+  const workflowSteps = ["Bereich wählen", "Bausteine auswählen", "Text erstellen", "übernehmen oder anhängen", "nächsten Bereich wählen"];
   const nextStepMarkup = `
     <div class="suggestion-apply-choice block-selection-next-step hidden" data-block-selection-next-step>
-      <span>Text wurde angehängt. Du kannst weitere eigene Bausteine auswählen oder das Fenster schließen.</span>
+      <span>Text wurde angehängt. Du kannst jetzt einen weiteren Bereich auswählen oder das Bausteinfenster schließen.</span>
       <div class="actions">
-        <button class="small-button secondary-button" type="button" data-action="continue-block-selection">Weitere Bausteine auswählen</button>
+        <button class="small-button secondary-button" type="button" data-action="continue-block-selection">Weiteren Bereich auswählen</button>
         <button class="small-button quiet-button" type="button" data-action="finish-block-selection-work">Bausteinfenster schließen</button>
       </div>
     </div>
   `;
   return `
     <div class="idea-panel block-panel hidden" data-block-panel="${escapeHtml(row)}|${column.key}" data-module-row="${escapeHtml(row)}" data-module-column="${column.key}">
-      <div class="block-panel-header">
-        <div>
-          <strong>Eigene Bausteine</strong>
-          <span>${escapeHtml(row)} – ${escapeHtml(moduleFieldLabels[column.key])}</span>
+        <div class="block-panel-header">
+          <div>
+            <strong>Text mit Bausteinen ergänzen</strong>
+            <span>${escapeHtml(row)} – ${escapeHtml(moduleFieldLabels[column.key])}</span>
+          </div>
+          <button class="small-button quiet-button" type="button" data-action="close-blocks" data-raster-row="${escapeHtml(row)}" data-raster-column="${column.key}">Schließen</button>
         </div>
-        <button class="small-button quiet-button" type="button" data-action="close-blocks" data-raster-row="${escapeHtml(row)}" data-raster-column="${column.key}">Schließen</button>
-      </div>
-      <section class="block-workflow-note" aria-label="Arbeit mit eigenen Bausteinen">
-        <p>Hier kannst du selbst gespeicherte Bausteine gezielt ergänzen. Automatische Vorschläge werden ausschließlich über das Kompetenzraster und die hinterlegten Förderketten erstellt.</p>
-        <ol class="block-workflow-steps">
-          ${workflowSteps.map((step) => `<li>${escapeHtml(step)}</li>`).join("")}
-        </ol>
-      </section>
-      <div class="block-tab-panel" data-block-tab-panel="custom">
-        <div class="block-selection-toolbar">
-          <button class="small-button secondary-button" type="button" data-action="show-custom-module-form">Eigenen Baustein erstellen</button>
-          <button class="small-button primary" type="button" data-action="create-block-selection-text">Text aus Auswahl erstellen</button>
-          <button class="small-button quiet-button" type="button" data-action="reset-block-selection">Auswahl leeren</button>
-        </div>
-        <p class="field-help block-selection-flow-status" data-block-selection-flow-status>Eigene Bausteine bleiben im Auswahlkorb, bis du sie bewusst leerst.</p>
-        <section class="block-selection-basket" data-block-selection-basket>
-          <strong>Ausgewählte Bausteine</strong>
-          <p>Noch keine Bausteine ausgewählt.</p>
+        <section class="block-workflow-note" aria-label="Schrittweise Arbeit mit Bausteinen">
+          <p>Dieses Fenster eignet sich zum gezielten Ergänzen einzelner Textteile. Wähle einen Bereich aus, erstelle einen Textvorschlag und übernimm ihn. Danach kannst du einen weiteren Bereich auswählen und den nächsten Text an den vorhandenen Text anhängen.</p>
+          <p>Für einen vollständigen automatischen Vorschlag nutze das Kompetenzraster. Das Bausteinfenster ist für gezielte Ergänzungen gedacht.</p>
+          <ol class="block-workflow-steps">
+            ${workflowSteps.map((step) => `<li>${escapeHtml(step)}</li>`).join("")}
+          </ol>
         </section>
-        ${renderCustomModuleSection(row, column, customModules)}
-        <div class="block-selection-preview hidden" data-block-selection-preview>
-          <div class="block-selection-preview-header">
-            <strong>${escapeHtml(blockSelectionPreviewTitle(column.key))}</strong>
-            <span>Du kannst den Text vor der Übernahme anpassen.</span>
-          </div>
-          <p class="field-help" data-block-selection-message></p>
-          <textarea data-block-selection-raw></textarea>
-          <div class="actions">
-            <button class="small-button primary" type="button" data-action="apply-block-selection" data-apply-mode="replace">Text übernehmen</button>
-            <button class="small-button secondary-button" type="button" data-action="apply-block-selection" data-apply-mode="append">An vorhandenen Text anhängen</button>
-            <button class="small-button quiet-button" type="button" data-action="cancel-block-selection-preview">Abbrechen</button>
-          </div>
-          <p class="field-help" data-block-selection-status aria-live="polite"></p>
-          <div class="suggestion-apply-choice hidden" data-block-selection-choice>
-            <span>Das Feld enthält bereits Text. Ersetzen oder anhängen?</span>
-            <div class="actions">
-              <button class="small-button primary" type="button" data-action="confirm-block-selection" data-apply-mode="replace">Ersetzen</button>
-              <button class="small-button secondary-button" type="button" data-action="confirm-block-selection" data-apply-mode="append">An vorhandenen Text anhängen</button>
-              <button class="small-button quiet-button" type="button" data-action="cancel-block-selection-choice">Abbrechen</button>
-            </div>
-          </div>
-          ${nextStepMarkup}
+        <div class="block-tab-nav" role="tablist" aria-label="Bausteinarten">
+          <button class="block-tab-button active" type="button" role="tab" aria-selected="true" data-action="switch-block-tab" data-block-tab="fixed">Vorgefertigte Bausteine</button>
+          <button class="block-tab-button" type="button" role="tab" aria-selected="false" data-action="switch-block-tab" data-block-tab="custom">Eigene Bausteine</button>
         </div>
-        ${renderCustomModuleForm(row, column)}
-        ${hasCustomBlocks ? "" : `<p class="field-help">Eigene Bausteine für ${escapeHtml(row)} – ${escapeHtml(moduleFieldLabels[column.key])} können über die Maske ergänzt werden.</p>`}
+        <div class="block-tab-panel" data-block-tab-panel="fixed">
+          <div class="block-filters">
+            ${gradeLevels.length ? `
+              <label class="block-filter">
+                <span>Klassenstufe</span>
+                <select data-module-grade>
+                  ${gradeLevels.map((grade) => `
+                    <option value="${escapeHtml(grade)}"${grade === selectedGrade ? " selected" : ""}>${escapeHtml(grade)}</option>
+                  `).join("")}
+                </select>
+              </label>
+            ` : ""}
+            <label class="block-filter">
+              <span>Bereich / Thema</span>
+              <select data-module-topic>
+                ${topics.length ? topics.map(([topicName]) => `
+                  <option value="${escapeHtml(topicName)}"${topicName === selectedTopic ? " selected" : ""}>${escapeHtml(moduleTopicDisplayName(row, topicName))}</option>
+                `).join("") : `<option value="">Keine Themen hinterlegt</option>`}
+              </select>
+            </label>
+            <label class="block-filter">
+              <span>Bausteine durchsuchen</span>
+              <input type="search" data-module-search placeholder="Suchbegriff eingeben" autocomplete="off" />
+            </label>
+          </div>
+          <p class="field-help block-selection-flow-status" data-block-selection-flow-status>Beim Bereichswechsel bleibt deine bisherige Auswahl erhalten. Nutze „Auswahl für neuen Bereich leeren“, wenn du für den nächsten Abschnitt neu starten möchtest.</p>
+          ${blocks.length ? `
+          <div class="block-selection-toolbar">
+            <button class="small-button primary" type="button" data-action="create-block-selection-text">Text aus Auswahl erstellen</button>
+            <button class="small-button quiet-button" type="button" data-action="reset-block-selection">Auswahl für neuen Bereich leeren</button>
+          </div>
+          <section class="block-selection-basket" data-block-selection-basket>
+            <strong>Ausgewählte Bausteine</strong>
+            <p>Noch keine Bausteine ausgewählt.</p>
+          </section>
+          <div class="block-list">
+            ${blocks.map(({ grade, topicName, module }) => {
+              const displayTopicName = moduleTopicDisplayName(row, topicName);
+              const title = fixedModuleTitleFromText(module.text, displayTopicName);
+              const preview = fixedModulePreviewFromText(module.text);
+              const collapsiblePreview = isLongFixedModulePreview(preview);
+              return `
+              <div class="block-list-item block-module-card${grade === selectedGrade && topicName === selectedTopic ? "" : " hidden"}" data-module-item data-block-module-card data-module-grade="${escapeHtml(grade)}" data-module-topic="${escapeHtml(topicName)}" data-module-search="${escapeHtml([row, moduleFieldLabels[column.key], topicName, displayTopicName, textModuleSearchText(module)].join(" ").toLocaleLowerCase("de-DE"))}" data-module-text="${escapeHtml(JSON.stringify(module))}">
+                <input class="block-select-checkbox" type="checkbox" data-module-select data-module-text="${escapeHtml(JSON.stringify(module))}" aria-label="${escapeHtml(`Baustein auswählen: ${module.text}`)}" />
+                <div class="custom-module-content">
+                  <strong>${escapeHtml(title)}</strong>
+                  <span class="custom-module-topic">${escapeHtml(row)} · ${escapeHtml(moduleFieldLabels[column.key])}${topicName ? ` · ${escapeHtml(displayTopicName)}` : ""}</span>
+                  ${preview ? `
+                    <p class="fixed-module-preview${collapsiblePreview ? " is-collapsible" : ""}" data-fixed-module-preview>${escapeHtml(preview)}</p>
+                    ${collapsiblePreview ? `<button class="inline-text-button" type="button" data-action="toggle-fixed-module-preview" aria-expanded="false">mehr anzeigen</button>` : ""}
+                  ` : ""}
+                </div>
+                <div class="custom-module-actions">
+                  <button class="small-button primary" type="button" data-action="preview-block-module">Auswählen</button>
+                </div>
+                <div class="suggestion-apply-choice custom-module-choice hidden" data-block-module-choice>
+                  <span>Dieses Feld enthält bereits Text. Möchten Sie den vorhandenen Text ersetzen oder den Baustein anhängen?</span>
+                  <div class="actions">
+                    <button class="small-button secondary-button" type="button" data-action="confirm-block-module-apply" data-apply-mode="append">An vorhandenen Text anhängen</button>
+                    <button class="small-button primary" type="button" data-action="confirm-block-module-apply" data-apply-mode="replace">Ersetzen</button>
+                    <button class="small-button quiet-button" type="button" data-action="cancel-block-module-apply">Abbrechen</button>
+                  </div>
+                </div>
+              </div>
+            `;
+            }).join("")}
+          </div>
+          <div class="block-module-editor hidden" data-block-module-editor>
+            <div class="block-selection-preview-header">
+              <strong>Vorgefertigten Baustein anpassen</strong>
+              <span>Der Originalbaustein im Katalog bleibt unverändert.</span>
+            </div>
+            <textarea data-block-module-editor-text></textarea>
+            <input type="hidden" data-block-module-editor-topic />
+            <div class="actions">
+              <button class="small-button primary" type="button" data-action="apply-edited-block-module" data-apply-mode="replace">Übernehmen</button>
+              <button class="small-button secondary-button" type="button" data-action="apply-edited-block-module" data-apply-mode="append">An vorhandenen Text anhängen</button>
+              <button class="small-button secondary-button" type="button" data-action="save-edited-block-as-custom">Als eigenen Baustein speichern</button>
+              <button class="small-button quiet-button" type="button" data-action="cancel-block-module-editor">Abbrechen</button>
+            </div>
+            <div class="suggestion-apply-choice hidden" data-block-module-editor-choice>
+              <span>Dieses Feld enthält bereits Text. Möchten Sie den vorhandenen Text ersetzen oder den neuen Text anhängen?</span>
+              <div class="actions">
+                <button class="small-button secondary-button" type="button" data-action="confirm-edited-block-module" data-apply-mode="append">An vorhandenen Text anhängen</button>
+                <button class="small-button primary" type="button" data-action="confirm-edited-block-module" data-apply-mode="replace">Ersetzen</button>
+                <button class="small-button quiet-button" type="button" data-action="cancel-edited-block-module-choice">Abbrechen</button>
+              </div>
+            </div>
+            <p class="field-help" data-block-module-editor-status aria-live="polite"></p>
+          </div>
+          <div class="block-selection-preview hidden" data-block-selection-preview>
+            <div class="block-selection-preview-header">
+              <strong>${escapeHtml(blockSelectionPreviewTitle(column.key))}</strong>
+              <span>Du kannst den Text vor der Übernahme anpassen.</span>
+            </div>
+            <p class="field-help" data-block-selection-message></p>
+            <textarea data-block-selection-raw></textarea>
+            <div class="actions">
+              <button class="small-button primary" type="button" data-action="apply-block-selection" data-apply-mode="replace">Text übernehmen</button>
+              <button class="small-button secondary-button" type="button" data-action="apply-block-selection" data-apply-mode="append">An vorhandenen Text anhängen</button>
+              <button class="small-button secondary-button" type="button" data-action="save-block-selection-as-custom">Als eigenen Baustein speichern</button>
+              <button class="small-button quiet-button" type="button" data-action="cancel-block-selection-preview">Abbrechen</button>
+            </div>
+            <p class="field-help" data-block-selection-status aria-live="polite"></p>
+            <div class="suggestion-apply-choice hidden" data-block-selection-choice>
+              <span>Das Feld enthält bereits Text. Ersetzen oder anhängen?</span>
+              <div class="actions">
+                <button class="small-button primary" type="button" data-action="confirm-block-selection" data-apply-mode="replace">Ersetzen</button>
+                <button class="small-button secondary-button" type="button" data-action="confirm-block-selection" data-apply-mode="append">An vorhandenen Text anhängen</button>
+                <button class="small-button quiet-button" type="button" data-action="cancel-block-selection-choice">Abbrechen</button>
+              </div>
+            </div>
+            ${nextStepMarkup}
+          </div>
+          ` : `<p class="field-help">Für diesen Bereich und dieses Feld sind noch keine vorgefertigten Bausteine hinterlegt.</p>`}
+          <p class="field-help${hasVisibleFixedBlocks ? " hidden" : ""}" data-module-empty>Für diese Klassenstufe, dieses Thema und Feld sind noch keine Beispielbausteine hinterlegt.</p>
+        </div>
+        <div class="block-tab-panel hidden" data-block-tab-panel="custom">
+          <div class="block-selection-toolbar">
+            <button class="small-button secondary-button" type="button" data-action="show-custom-module-form">Eigenen Baustein erstellen</button>
+            <button class="small-button primary" type="button" data-action="create-block-selection-text">Text aus Auswahl erstellen</button>
+            <button class="small-button quiet-button" type="button" data-action="reset-block-selection">Auswahl für neuen Bereich leeren</button>
+          </div>
+          <p class="field-help block-selection-flow-status" data-block-selection-flow-status>Eigene Bausteine bleiben im Auswahlkorb, bis du sie bewusst leerst.</p>
+          <section class="block-selection-basket" data-block-selection-basket>
+            <strong>Ausgewählte Bausteine</strong>
+            <p>Noch keine Bausteine ausgewählt.</p>
+          </section>
+          ${renderCustomModuleSection(row, column, customModules)}
+          <div class="block-selection-preview hidden" data-block-selection-preview>
+            <div class="block-selection-preview-header">
+              <strong>${escapeHtml(blockSelectionPreviewTitle(column.key))}</strong>
+              <span>Du kannst den Text vor der Übernahme anpassen.</span>
+            </div>
+            <p class="field-help" data-block-selection-message></p>
+            <textarea data-block-selection-raw></textarea>
+            <div class="actions">
+              <button class="small-button primary" type="button" data-action="apply-block-selection" data-apply-mode="replace">Text übernehmen</button>
+              <button class="small-button secondary-button" type="button" data-action="apply-block-selection" data-apply-mode="append">An vorhandenen Text anhängen</button>
+              <button class="small-button secondary-button" type="button" data-action="save-block-selection-as-custom">Als eigenen Baustein speichern</button>
+              <button class="small-button quiet-button" type="button" data-action="cancel-block-selection-preview">Abbrechen</button>
+            </div>
+            <p class="field-help" data-block-selection-status aria-live="polite"></p>
+            <div class="suggestion-apply-choice hidden" data-block-selection-choice>
+              <span>Das Feld enthält bereits Text. Ersetzen oder anhängen?</span>
+              <div class="actions">
+                <button class="small-button primary" type="button" data-action="confirm-block-selection" data-apply-mode="replace">Ersetzen</button>
+                <button class="small-button secondary-button" type="button" data-action="confirm-block-selection" data-apply-mode="append">An vorhandenen Text anhängen</button>
+                <button class="small-button quiet-button" type="button" data-action="cancel-block-selection-choice">Abbrechen</button>
+              </div>
+            </div>
+            ${nextStepMarkup}
+          </div>
+          ${renderCustomModuleForm(row, column)}
+          ${hasCustomBlocks ? "" : `<p class="field-help">Eigene Bausteine für ${escapeHtml(row)} – ${escapeHtml(moduleFieldLabels[column.key])} können über die Maske ergänzt werden.</p>`}
+        </div>
       </div>
-    </div>
   `;
 }
 
@@ -17280,7 +17476,7 @@ function openBlockModal(row, columnKey, source = "fixed", options = {}) {
   `;
   modal.querySelector(".block-module-modal-body").appendChild(panel);
   app.appendChild(modal);
-  setBlockTab(panel, "custom");
+  setBlockTab(panel, source === "fixed" ? "fixed" : "custom");
   activeRasterPanel = { row, type: "block", key: `block:${row}|${columnKey}` };
   updateTextSourceButtonState(row, columnKey, source, true);
   markTextSource(row, columnKey, source);
@@ -17432,6 +17628,10 @@ function openTextSource(row, columnKey, source) {
   }
   if (source === "chains") {
     openFreeChainModal(row);
+    return;
+  }
+  if (source === "fixed") {
+    openBlockModal(row, columnKey, "fixed");
     return;
   }
   if (source === "custom") {

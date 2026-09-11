@@ -7,6 +7,10 @@ Keine echten Schülerdaten im Code oder in Beispieldaten speichern.
 */
 
 window.FOERDERPLAN_DATA = (() => {
+  const textModuleLibrary = window.FOERDERPLAN_TEXT_MODULES || {};
+  const textModuleMeta = textModuleLibrary.meta || {};
+  const textModules = textModuleLibrary.areas || {};
+
   const appMeta = {
     appName: "FörderKompass",
     appVersion: "2.x",
@@ -4226,6 +4230,8 @@ window.FOERDERPLAN_DATA = (() => {
 
   return {
     appMeta,
+    textModuleMeta,
+    textModules,
     storageKey: "foerderplanAssistent:drafts:v2",
     customBlocksKey: "foerderplanAssistent:customBlocks:v1",
     childRecordsKey: "foerderplanAssistent:childRecords:v1",
