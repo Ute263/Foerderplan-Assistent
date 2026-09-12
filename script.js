@@ -38,6 +38,12 @@ const WORK_DIRECTORY_HANDLE_KEY = "selectedWorkDirectory";
 const WORK_DIRECTORY_AUTO_SYNC_KEY = "foerderplanungDirekt:autoSaveWorkDirectory:v1";
 const WORK_DIRECTORY_FILE_NAME_KEY = "foerderplanungDirekt:workDirectoryFileName:v1";
 const SPEECH_TERM_DISPLAY_MODE_KEY = "foerderplanungDirekt:speechTermDisplayMode:v1";
+const WORKSPACE_SIDEBAR_KEY = "foerderplanungDirekt:workspaceSidebarCollapsed:v1";
+let workspaceSidebarCollapsed = false;
+try {
+  workspaceSidebarCollapsed = localStorage.getItem(WORKSPACE_SIDEBAR_KEY) === "true";
+} catch {}
+
 
 let connectedWorkFileHandle = null;
 let pendingConnectedWorkFileHandle = null;
@@ -99,22 +105,6 @@ const inputModeOptions = [
     textSource: "chains",
     fieldButton: "Förderketten auswählen",
     description: "Vorhandene Förderketten ohne Kompetenzraster selbst auswählen und zu einem Förderplan zusammenstellen."
-  },
-  {
-    key: "prefabModules",
-    label: "Einzelne Bausteine frei auswählen",
-    shortLabel: "Einzelne Bausteine",
-    textSource: "fixed",
-    fieldButton: "Bausteine auswählen",
-    description: "Einzelne vorgefertigte Formulierungen manuell auswählen, anpassen und übernehmen. Sie werden nicht automatisch mit Förderketten vermischt."
-  },
-  {
-    key: "customModules",
-    label: "Mit eigenen Bausteinen arbeiten",
-    shortLabel: "Eigene Bausteine",
-    textSource: "custom",
-    fieldButton: "Eigene Bausteine auswählen",
-    description: "Persönliche Bausteine nutzen oder neue eigene Bausteine anlegen."
   },
   {
     key: "freeWriting",
@@ -482,10 +472,28 @@ const schoolYearOptions = ["2025/2026", "2026/2027", "2027/2028", "eigener Eintr
 const halfYearOptions = ["1. Hj.", "2. Hj.", "ganzes Schuljahr", "eigener Zeitraum"];
 const competenceRatingOptions = [
   "gesichert",
-  "teilweise unsicher",
+  "Förderbedarf",
   "unsicher",
   "nicht einschätzbar"
 ];
+
+function competenceRatingLabel(rating = "") {
+  return {
+    gesichert: "sicher",
+    Förderbedarf: "teilweise",
+    unsicher: "unsicher",
+    "nicht einschätzbar": "nicht einschätzbar"
+  }[rating] || rating;
+}
+
+function normalizeCompetenceRatingValue(rating = "") {
+  const value = String(rating || "").trim();
+  if (value === "sicher") return "gesichert";
+  if (value === "teilweise" || value === "teilweise unsicher" || value === "Förderbedarf") return "Förderbedarf";
+  if (value === "unsicher") return "unsicher";
+  if (value === "nicht beurteilt" || value === "nicht einschätzbar") return "nicht einschätzbar";
+  return value;
+}
 const emotionalCompetenceGroups = [
   {
     title: "Emotionalität",
@@ -2885,7 +2893,7 @@ function isExactEmotionalFrustrationSelfImageConflictSelection(entries = []) {
   const active = activeComposerModuleEntries(entries);
   const selectedTopics = active.map((entry) => normalizeEmotionalFocusTopic(entry.topic));
   if (!sameTopicCombination(selectedTopics, expectedTopics)) return false;
-  if (!active.every((entry) => entry.rating === "teilweise unsicher")) return false;
+  if (!active.every((entry) => entry.rating === "Förderbedarf")) return false;
 
   const entryByTopic = new Map(active.map((entry) => [normalizeEmotionalFocusTopic(entry.topic), entry]));
   const frustrationDetails = normalizeCompetenceObservationEntry(
@@ -3152,6 +3160,49 @@ const speechCompetenceTopics = [
   "Stimme / Sprechweise",
   "Redefluss / Wortfindung"
 ];
+
+const speechCompetenceGroups = [
+  {
+    title: "Pragmatisch-kommunikative Ebene",
+    topics: ["Kommunikation / Gesprächsverhalten"]
+  },
+  {
+    title: "Phonetisch-phonologische Ebene",
+    topics: [
+      "Aussprache / Artikulation",
+      "Lautwahrnehmung / phonologische Bewusstheit"
+    ]
+  },
+  {
+    title: "Semantisch-lexikalische Ebene",
+    topics: ["Wortschatz / Wortbedeutung"]
+  },
+  {
+    title: "Morphologisch-syntaktische Ebene",
+    topics: ["Grammatik / Satzbildung"]
+  },
+  {
+    title: "Sprachverständnis / rezeptive Sprachverarbeitung",
+    topics: ["Sprachverständnis / Arbeitsaufträge"]
+  },
+  {
+    title: "Narrative Fähigkeiten",
+    topics: ["Erzählfähigkeit / Versprachlichen"]
+  },
+  {
+    title: "Stimmlich-prosodischer Bereich",
+    topics: ["Stimme / Sprechweise"]
+  },
+  {
+    title: "Redefluss / Wortabruf",
+    topics: ["Redefluss / Wortfindung"]
+  }
+];
+
+function speechCompetenceTopicsInProfessionalOrder() {
+  return speechCompetenceGroups.flatMap((group) => group.topics);
+}
+
 const speechCompetenceTopicAliases = {
   "Arbeitsaufträge verstehen": "Sprachverständnis / Arbeitsaufträge",
   "Anweisungsverständnis": "Sprachverständnis / Arbeitsaufträge",
@@ -3254,19 +3305,23 @@ const speechTermDisplayMap = {
 };
 
 function normalizeSpeechTermDisplayMode(value) {
-  return speechTermDisplayModes.includes(value) ? value : "plain";
+  return speechTermDisplayModes.includes(value) ? value : "combined";
 }
 
 function storedSpeechTermDisplayMode() {
   try {
-    return normalizeSpeechTermDisplayMode(localStorage.getItem(SPEECH_TERM_DISPLAY_MODE_KEY));
+    const stored = localStorage.getItem(SPEECH_TERM_DISPLAY_MODE_KEY);
+    return stored === "technical" || stored === "combined"
+      ? stored
+      : "combined";
   } catch {
-    return "plain";
+    return "combined";
   }
 }
 
 function speechTermMode() {
-  return normalizeSpeechTermDisplayMode(plan?.speechTermDisplayMode || storedSpeechTermDisplayMode());
+  const value = plan?.speechTermDisplayMode || storedSpeechTermDisplayMode();
+  return value === "plain" ? "combined" : normalizeSpeechTermDisplayMode(value);
 }
 
 function speechTopicDisplayName(topic, mode = speechTermMode()) {
@@ -3375,7 +3430,8 @@ const cognitionLegacyModuleTopics = {
 };
 
 const cognitionTopicDisplayLabels = {
-  Strategien: "Strategien nutzen"
+  Strategien: "Strategien nutzen",
+  "Übertragung von Wissen": "Transfer / Anwendung in neuen Situationen"
 };
 
 function canonicalCognitionCompetenceTopic(topic) {
@@ -4428,7 +4484,7 @@ function normalizedMotorTemplateTopics(template = {}) {
 
 function selectedMotorTemplateTopics(entries = []) {
   return [...new Set((entries || [])
-    .filter((entry) => entry.rating === "unsicher" || entry.rating === "teilweise unsicher")
+    .filter((entry) => entry.rating === "unsicher" || entry.rating === "Förderbedarf")
     .map((entry) => String(entry.topic || "").trim())
     .filter((topic) => motorCompetenceTopics.includes(topic))
   )].sort((left, right) => motorTopicOrderIndex(left) - motorTopicOrderIndex(right));
@@ -6638,7 +6694,7 @@ function normalizedPerceptionTemplateTopics(template = {}) {
 
 function selectedPerceptionTemplateTopics(entries = []) {
   return [...new Set((entries || [])
-    .filter((entry) => entry.rating === "unsicher" || entry.rating === "teilweise unsicher")
+    .filter((entry) => entry.rating === "unsicher" || entry.rating === "Förderbedarf")
     .map((entry) => canonicalPerceptionCompetenceTopic(entry.topic))
     .filter((topic) => perceptionCompetenceTopics.includes(topic))
   )].sort((left, right) => perceptionTopicOrderIndex(left) - perceptionTopicOrderIndex(right));
@@ -7547,38 +7603,40 @@ function stepNumber() {
   return { basic: 1, workMode: 2, competence: 3, raster: 4, agreements: 5, quality: 6, print: 7, storage: 8 }[currentStep] || 1;
 }
 
+function workspacePhase() {
+  if (currentStep === "basic") return 1;
+  if (["workMode", "competence"].includes(currentStep)) return 2;
+  if (["raster", "agreements", "quality"].includes(currentStep)) return 3;
+  if (["print", "storage"].includes(currentStep)) return 4;
+  return 1;
+}
+
 function progress() {
-  const steps = [
-    { label: "Grunddaten", step: "basic" },
-    { label: "Arbeitsweise", step: "workMode" },
-    { label: "Kompetenzen", step: "competence" },
-    { label: "Förderplan", step: "raster" },
-    { label: "Vereinbarungen", step: "agreements" },
-    { label: "Qualitätscheck", step: "quality" },
-    { label: "Druck", step: "print" },
-    { label: "Speicher", step: "storage" }
+  const phases = [
+    { number: 1, label: "Schüler:in", step: "basic" },
+    { number: 2, label: "Kompetenzen", step: "competence" },
+    { number: 3, label: "Vorschlag", step: "raster" },
+    { number: 4, label: "Förderplan", step: "print" }
   ];
-  const active = stepNumber();
+  const active = workspacePhase();
   return `
-    <nav class="progress" aria-label="Arbeitsstand">
-      ${steps.map((item, index) => {
-        const isActive = index + 1 === active;
-        const isComplete = index + 1 < active;
+    <nav class="progress progress-phases" aria-label="Arbeitsstand">
+      ${phases.map((item) => {
+        const isActive = item.number === active;
+        const isComplete = item.number < active;
         return `
           <button
-            class="${isActive ? "active" : ""} ${isComplete ? "is-complete" : ""}"
+            class="progress-phase ${isActive ? "active" : ""} ${isComplete ? "is-complete" : ""}"
             type="button"
             data-action="step"
             data-step="${escapeHtml(item.step)}"
-            ${isActive ? 'aria-current="page"' : ""}
-          >${escapeHtml(item.label)}</button>
+            ${isActive ? 'aria-current="step"' : ""}
+          >
+            <span class="progress-phase-number">${isComplete ? "✓" : item.number}</span>
+            <span class="progress-phase-label">${escapeHtml(item.label)}</span>
+          </button>
         `;
-      }).join("")}
-      <button
-        class="progress-support-button"
-        type="button"
-        data-action="support"
-      >♡ Unterstützen</button>
+      }).join('<span class="progress-phase-line" aria-hidden="true"></span>')}
     </nav>
   `;
 }
@@ -7589,10 +7647,8 @@ function renderStart() {
     <section class="start-layout">
       <section class="start-hero">
         <div class="start-hero-copy">
-          <img class="start-hero-icon" src="icon.svg" alt="" aria-hidden="true" />
-          <div>
-            <h2>FörderKompass</h2>
-            <p class="start-hero-subtitle">Werkzeug für strukturierte Förderpläne</p>
+          <img class="start-brand-logo" src="brand-logo.png" alt="FörderKompass – Individuell. Strukturiert. Wirksam." />
+          <div class="start-hero-message">
             <p>Kompetenzen einschätzen, passende Formulierungen nutzen, Maßnahmen planen und als PDF oder Word ausgeben.</p>
           </div>
         </div>
@@ -8291,7 +8347,7 @@ function hasCurrentPlanContent() {
 
 function ratedCompetenciesForArea(area) {
   return Object.entries(plan.competenceRatings?.[area] || {})
-    .map(([topic, rating]) => [topic, rating === "Förderbedarf" ? "unsicher" : rating])
+    .map(([topic, rating]) => [topic, normalizeCompetenceRatingValue(rating)])
     .filter(([, rating]) => competenceRatingOptions.includes(rating));
 }
 
@@ -8378,6 +8434,123 @@ function renderSpeechTermDisplaySelector(area) {
   `;
 }
 
+
+const professionalCompetenceGroupRules = {
+  "Lern- und Leistungsverhalten": [
+    { title: "Lernbereitschaft / Motivation", patterns: ["motivation", "lernbereitschaft", "interesse", "anstrengungsbereitschaft"] },
+    { title: "Aufmerksamkeit / Ausdauer", patterns: ["aufmerksamkeit", "konzentration", "ausdauer"] },
+    { title: "Aufgabenverständnis / Arbeitsbeginn", patterns: ["aufgabenverständnis", "arbeitsauftrag", "arbeitsbeginn", "aufgabenbeginn"] },
+    { title: "Selbstständigkeit / Organisation", patterns: ["selbstständig", "organisation", "material", "arbeitsorganisation", "planung"] },
+    { title: "Arbeitstempo / Sorgfalt / Kontrolle", patterns: ["tempo", "sorgfalt", "kontrolle", "überprüfung", "fehler"] }
+  ],
+  "Kognition": [
+    { title: "Gedächtnis / Behalten / Abruf", patterns: ["merkfähigkeit", "kurzzeit", "langfrist", "behalten", "abruf", "gedächtnis"] },
+    { title: "Strategien / Lernwege", patterns: ["strategie"] },
+    { title: "Problemlösen / Schlussfolgern / Zusammenhänge", patterns: ["problemlösen", "schlussfolger", "zusammenhäng", "denken"] },
+    { title: "Transfer / Anwendung", patterns: ["transfer", "anwendung in neuen", "übertragung"] },
+    { title: "Symbolverständnis / Ordnungssysteme", patterns: ["symbol", "ordnungssystem"] }
+  ],
+  "Motorik": [
+    { title: "Grobmotorik / Haltung / Bewegung", patterns: ["grobmotor", "haltung", "bewegung", "kraft", "ausdauer"] },
+    { title: "Koordination / Gleichgewicht", patterns: ["koordination", "gleichgewicht", "überkreuz", "bilateral"] },
+    { title: "Körperschema / Raumorientierung", patterns: ["körperschema", "körperwahrnehm", "raumorient"] },
+    { title: "Feinmotorik / Handgeschicklichkeit", patterns: ["feinmotor", "handgeschick", "finger", "schneiden"] },
+    { title: "Graphomotorik / Schreibmotorik", patterns: ["graphomotor", "schreibmotor", "stifthaltung", "stift", "schrift"] },
+    { title: "Motorische Handlungsplanung", patterns: ["handlungsplanung", "bewegungsplanung", "prax"] }
+  ],
+  "Wahrnehmung": [
+    { title: "Visuelle Wahrnehmung", patterns: ["visuell", "sehen", "figur", "form", "lage", "raumlage", "räumlicher beziehungen"] },
+    { title: "Auditive Wahrnehmung", patterns: ["auditiv", "hören", "laut", "geräusch"] },
+    { title: "Taktil-kinästhetische Wahrnehmung", patterns: ["taktil", "kinästhet", "tasten", "fühlen", "proprio"] },
+    { title: "Vestibuläre Wahrnehmung / Gleichgewicht", patterns: ["vestibul", "gleichgewicht"] },
+    { title: "Wahrnehmungsverarbeitung / Integration", patterns: ["integration", "reiz", "wahrnehmungsverarbeitung"] }
+  ],
+  "Emotionalität, Sozialverhalten": [
+    { title: "Emotionswahrnehmung / Emotionsregulation", patterns: ["emotion", "gefühl", "regulation", "frustration"] },
+    { title: "Selbststeuerung / Impulskontrolle", patterns: ["selbststeuer", "impuls", "abwarten"] },
+    { title: "Selbstbild / Selbstwirksamkeit", patterns: ["selbstbild", "selbstwirksam", "zutrauen"] },
+    { title: "Kontakt / Kommunikation / Kooperation", patterns: ["kontakt", "kommunikation", "kooperation", "gemeinsam", "gruppe"] },
+    { title: "Regeln / Konflikte / Perspektivübernahme", patterns: ["regel", "konflikt", "perspektiv", "rücksicht"] }
+  ],
+  "Deutsch": [
+    { title: "Lesen", patterns: ["lesen", "lese", "sinnentnahme", "textverständ"] },
+    { title: "Rechtschreiben", patterns: ["rechtschreib", "lautgetreu", "abschreiben", "kontrollieren"] },
+    { title: "Schreiben / Texte verfassen", patterns: ["eigene sätze", "eigene texte", "texte schreiben", "text verfassen", "erzählen"] },
+    { title: "Sprache untersuchen / Grammatik", patterns: ["sprache untersuchen", "grammatik", "wortart", "nomen", "verb", "adjektiv", "satzbau"] }
+  ],
+  "Mathematik": [
+    { title: "Zahlen / Zahlverständnis", patterns: ["zahl", "zahlenraum", "stellenwert", "bündel"] },
+    { title: "Rechnen / Operationen", patterns: ["rechnen", "addition", "subtraktion", "multiplikation", "division", "operation"] },
+    { title: "Sachrechnen / Modellieren", patterns: ["sach", "modell", "textaufgabe"] },
+    { title: "Raum und Form / Geometrie", patterns: ["raum", "form", "geometr", "spiegel", "figur"] },
+    { title: "Größen / Messen", patterns: ["größe", "messen", "länge", "gewicht", "geld", "zeit"] },
+    { title: "Daten / Muster / Strukturen", patterns: ["daten", "muster", "struktur", "tabelle", "diagramm"] }
+  ]
+};
+
+function professionalGroupRulesForArea(area = "") {
+  if (professionalCompetenceGroupRules[area]) return professionalCompetenceGroupRules[area];
+  if (area.startsWith("Deutsch")) return professionalCompetenceGroupRules.Deutsch;
+  if (area.startsWith("Mathematik")) return professionalCompetenceGroupRules.Mathematik;
+  return [];
+}
+
+function professionalCompetenceGroupsForArea(area, topics = []) {
+  const rules = professionalGroupRulesForArea(area);
+  if (!rules.length) return [{ title: "Kompetenzen", topics: [...topics] }];
+
+  const remaining = new Set(topics);
+  const groups = rules.map((rule) => {
+    const matches = topics.filter((topic) => {
+      if (!remaining.has(topic)) return false;
+      const normalized = String(topic || "").toLowerCase();
+      return rule.patterns.some((pattern) => normalized.includes(pattern));
+    });
+    matches.forEach((topic) => remaining.delete(topic));
+    return { title: rule.title, topics: matches };
+  }).filter((group) => group.topics.length);
+
+  if (remaining.size) {
+    groups.push({ title: "Weitere Kompetenzen", topics: topics.filter((topic) => remaining.has(topic)) });
+  }
+  return groups;
+}
+
+function renderProfessionalCompetenceGroups(area, topics = []) {
+  return professionalCompetenceGroupsForArea(area, topics).map((group) => `
+    <section class="professional-competence-group">
+      <h4>${escapeHtml(group.title)}</h4>
+      <div class="professional-competence-group-topics">
+        ${group.topics.map((topic) => renderCompetenceTopic(area, topic)).join("")}
+      </div>
+    </section>
+  `).join("");
+}
+
+function professionalGroupTitleForTopic(area, topic = "") {
+  if (area === "Sprache / Kommunikation") {
+    const canonical = canonicalSpeechCompetenceTopic(topic);
+    return speechCompetenceGroups.find((group) => group.topics.includes(canonical))?.title || "";
+  }
+  return professionalCompetenceGroupsForArea(area, competenceTopicsForArea(area))
+    .find((group) => group.topics.includes(topic))?.title || "";
+}
+
+function renderSpeechCompetenceGroups(area, topics = []) {
+  const available = new Set(topics.map((topic) => canonicalSpeechCompetenceTopic(topic)));
+  return speechCompetenceGroups.map((group) => {
+    const groupTopics = group.topics.filter((topic) => available.has(topic));
+    if (!groupTopics.length) return "";
+    return `
+      <section class="speech-competence-group">
+        <h4>${escapeHtml(group.title)}</h4>
+        <div class="speech-competence-group-topics">
+          ${groupTopics.map((topic) => renderCompetenceTopic(area, topic)).join("")}
+        </div>
+      </section>`;
+  }).join("");
+}
+
 function renderCompetenceSingleView(area) {
   const topics = competenceTopicsForArea(area);
   const areaIndex = rasterRows.indexOf(area);
@@ -8404,9 +8577,9 @@ function renderCompetenceSingleView(area) {
         ${renderSubjectLevelSelector(area)}
         ${renderSpeechTermDisplaySelector(area)}
         <div class="competence-topic-list">
-          ${area === "Emotionalität, Sozialverhalten"
-            ? renderEmotionalCompetenceGroups(area, topics)
-            : topics.map((topic) => renderCompetenceTopic(area, topic)).join("")}
+          ${area === "Sprache / Kommunikation"
+            ? renderSpeechCompetenceGroups(area, topics)
+            : renderProfessionalCompetenceGroups(area, topics)}
         </div>
         <div class="competence-custom-add">
           <label class="field">
@@ -8485,7 +8658,7 @@ function renderCompetenceTopic(area, topic) {
   const observation = normalizeCompetenceObservationEntry(plan.competenceObservations?.[area]?.[topic]);
   const hint = competenceHintForTopic(topic);
   const observationOptions = competenceObservationOptionsFor(area, topic);
-  const needsConcreteObservation = observationOptions.length && ["teilweise unsicher", "unsicher"].includes(rating);
+  const needsConcreteObservation = observationOptions.length && ["Förderbedarf", "unsicher"].includes(rating);
   const hasObservation = competenceObservationHasContent(observation);
   const observationPanelHidden = needsConcreteObservation || (!observationOptions.length && hasObservation) ? "" : "hidden";
   return `
@@ -8493,14 +8666,14 @@ function renderCompetenceTopic(area, topic) {
       <div class="competence-topic-heading">
         <div>
           <strong class="competence-topic-title">${escapeHtml(displayTopic)}</strong>
-          ${previousRating ? `<span class="previous-competence-rating">Vorher: ${escapeHtml(previousRating)}</span>` : ""}
+          ${previousRating ? `<span class="previous-competence-rating">Vorher: ${escapeHtml(competenceRatingLabel(normalizeCompetenceRatingValue(previousRating)))}</span>` : ""}
           ${hint ? `<p class="competence-topic-hint">${escapeHtml(hint)}</p>` : ""}
         </div>
         ${observationOptions.length ? "" : `<button class="small-button quiet-button competence-observation-toggle" type="button" data-action="toggle-competence-observation" data-competence-area="${escapeHtml(area)}" data-competence-topic="${escapeHtml(topic)}" aria-expanded="${hasObservation ? "true" : "false"}">Beobachtung ergänzen</button>`}
       </div>
       <div class="competence-rating-group" role="group" aria-label="${escapeHtml(`${area}: ${displayTopic} einschätzen`)}" data-competence-rating-group data-competence-area="${escapeHtml(area)}" data-competence-topic="${escapeHtml(topic)}">
         ${competenceRatingOptions.map((option) => `
-          <button class="competence-rating-button ${rating === option ? "is-active" : ""}" type="button" data-action="set-competence-rating" data-competence-area="${escapeHtml(area)}" data-competence-topic="${escapeHtml(topic)}" data-competence-rating="${escapeHtml(option)}" aria-pressed="${rating === option ? "true" : "false"}">${escapeHtml(option)}</button>
+          <button class="competence-rating-button ${rating === option ? "is-active" : ""}" type="button" data-action="set-competence-rating" data-competence-area="${escapeHtml(area)}" data-competence-topic="${escapeHtml(topic)}" data-competence-rating="${escapeHtml(option)}" aria-pressed="${rating === option ? "true" : "false"}">${escapeHtml(competenceRatingLabel(option))}</button>
         `).join("")}
       </div>
       <div class="competence-observation-panel ${observationPanelHidden}" data-competence-observation-panel="${escapeHtml(`${area}|${topic}`)}">
@@ -8639,7 +8812,7 @@ function renderPreviousRasterOrientation(row) {
 
 function renderRasterField(row, column, values) {
   return `
-      <div class="field-group ${column.minClass}" id="${escapeHtml(qualityTargetId("foerderplan", row, column.key))}">
+      <div class="field-group ${column.minClass} plan-field-card plan-field-${escapeHtml(column.key)}" id="${escapeHtml(qualityTargetId("foerderplan", row, column.key))}">
         <span class="field-label">${escapeHtml(column.label)}</span>
         <span class="field-help">${escapeHtml(fieldHelp[column.key])}</span>
         <textarea aria-label="${escapeHtml(`${row}: ${column.label}`)}" data-raster-row="${escapeHtml(row)}" data-raster-column="${column.key}">${escapeHtml(values[column.key] || "")}</textarea>
@@ -9324,6 +9497,38 @@ function sentenceKey(value) {
   return suggestionTokens(value).join(" ");
 }
 
+
+function normalizeVisiblePlanPlaceholders(value = "") {
+  return String(value || "")
+    .replace(/#ihm\/ihr#/gi, "_")
+    .replace(/#ihn\/sie#/gi, "_")
+    .replace(/#sein\/ihr#/gi, "_")
+    .replace(/#seine\/ihre#/gi, "_")
+    .replace(/#seinem\/ihrem#/gi, "_")
+    .replace(/#seinen\/ihren#/gi, "_")
+    .replace(/#er\/sie#/gi, "_")
+    .replace(/\s{2,}/g, " ")
+    .trim();
+}
+
+function composeDevelopmentalIstStandText(value = "") {
+  const sentences = developmentalFieldSentences(normalizeVisiblePlanPlaceholders(value));
+  if (sentences.length <= 1) return sentences.join(" ");
+
+  const negative = /(noch nicht|benötigt|braucht|fällt .* schwer|schwer|unsicher|Unterstützung|nicht immer|gelingt .* nicht)/i;
+  const support = /(hilfe|hilfen|unterstütz|teilschritt|struktur|visual|erleichter|orientier|signal|ritual)/i;
+  const positive = /(sicher|gelingt|kann|nutzt|beherrscht|erkennt|liest|schreibt|benennt|versteht|selbstständig|zunehmend)/i;
+
+  const unique = removeRepeatedSentences(sentences);
+  const need = unique.filter(s => negative.test(s));
+  const strength = unique.filter(s => !negative.test(s) && positive.test(s));
+  const scaffold = unique.filter(s => !need.includes(s) && !strength.includes(s) && support.test(s));
+  const rest = unique.filter(s => !need.includes(s) && !strength.includes(s) && !scaffold.includes(s));
+
+  // Entwicklungslogik: Förderbedarf -> vorhandene/aufbauende Fähigkeit -> hilfreiche Struktur.
+  return [...need, ...strength, ...scaffold, ...rest].join(" ");
+}
+
 function removeRepeatedSentences(sentences) {
   const kept = [];
   sentences.forEach((sentence) => {
@@ -9763,7 +9968,7 @@ function competenceRecord({ topic, rating, observation, fields }) {
 
 function competenceIstStand(records, area) {
   const secured = records.filter((record) => record.rating === "gesichert");
-  const relevant = records.filter((record) => ["teilweise unsicher", "unsicher"].includes(record.rating));
+  const relevant = records.filter((record) => ["Förderbedarf", "unsicher"].includes(record.rating));
   const positiveItems = secured.flatMap((record) => {
     const positiveObservations = record.observations.filter((sentence) => !isSupportStatement(sentence));
     return positiveObservations.length ? positiveObservations : [record.positive].filter(Boolean);
@@ -9984,7 +10189,7 @@ const developmentPerspectiveByArea = {
 
 function stableCompetenceIstStand(records, area) {
   const secured = records.filter((record) => record.rating === "gesichert");
-  const partiallyUncertain = records.filter((record) => record.rating === "teilweise unsicher");
+  const partiallyUncertain = records.filter((record) => record.rating === "Förderbedarf");
   const uncertain = records.filter((record) => record.rating === "unsicher");
   const relevant = [...partiallyUncertain, ...uncertain];
   const positiveItems = secured.flatMap((record) => {
@@ -10092,7 +10297,7 @@ function isRepeatedSuggestion(candidate, existingItems) {
 }
 
 function goalMeasurePairs(records) {
-  const priority = { "unsicher": 0, "teilweise unsicher": 1 };
+  const priority = { "unsicher": 0, "Förderbedarf": 1 };
   const ordered = [...records].sort((left, right) =>
     (priority[left.rating] ?? 2) - (priority[right.rating] ?? 2)
   );
@@ -10252,7 +10457,8 @@ function applyComposerVariants(chains, variantOffset = 0) {
 }
 
 function supportChainMatches(chain, area, gradeBand, topic, rating) {
-  if (!chain || chain.bereich !== area || chain.rating !== rating) return false;
+  if (!chain || chain.bereich !== area
+      || normalizeCompetenceRatingValue(chain.rating) !== normalizeCompetenceRatingValue(rating)) return false;
   const mappedTopics = area === "Deutsch"
     ? [topic, ...(germanComposerTopicMap[gradeBand]?.[topic] || [])]
     : [topic];
@@ -10308,7 +10514,7 @@ function moduleSuggestionText(items = [], variantOffset = 0) {
 
 function activeComposerModuleEntries(entries = []) {
   return entries
-    .filter((entry) => ["unsicher", "teilweise unsicher"].includes(entry.rating))
+    .filter((entry) => ["unsicher", "Förderbedarf"].includes(entry.rating))
     .sort((left, right) =>
       selectedModuleTopicOrder(left.area || "", left.topic, left.gradeBand || "")
       - selectedModuleTopicOrder(right.area || "", right.topic, right.gradeBand || "")
@@ -10354,7 +10560,7 @@ function composerModuleRatingScore(moduleEntry, entry = {}, fieldType = "") {
   const text = normalizeTextModuleEntry(moduleEntry).text;
   const partialMatch = /\b(?:teilweise|mit Unterstützung|noch nicht durchgängig|zunehmend|nicht immer)\b/i.test(text);
   const clearNeedMatch = /\b(?:benötigt|braucht|noch nicht|unsicher|Unterstützungsbedarf|fällt schwer)\b/i.test(text);
-  if (entry.rating === "teilweise unsicher") return partialMatch ? 4 : clearNeedMatch ? 2 : 0;
+  if (entry.rating === "Förderbedarf") return partialMatch ? 4 : clearNeedMatch ? 2 : 0;
   if (entry.rating === "unsicher") return clearNeedMatch ? 4 : partialMatch ? 2 : 0;
   return 0;
 }
@@ -10442,6 +10648,66 @@ function moduleBasedSuggestionMeta(area, entries = [], fieldSelections = {}, fal
     selectedCompetencies: entries,
     usedModulesByField
   };
+}
+
+
+function developmentalFieldSentences(value = "") {
+  return String(value || "")
+    .split(/\n+/)
+    .map((line) => line.trim().replace(/^[–—•*-]\s*/, ""))
+    .filter(Boolean)
+    .map((line) => /[.!?]$/.test(line) ? line : `${line}.`);
+}
+
+function developmentalResourceSentence(area, gradeBand, entries = []) {
+  const securedEntries = entries.filter((entry) => entry.rating === "gesichert");
+  if (!securedEntries.length) return "";
+  const chains = selectMatchingSupportChains(securedEntries, area, gradeBand, completeSupportChains);
+  for (const chain of chains) {
+    const raw = istStandVariantsForChain(chain)[0]?.text || chain.istStand || "";
+    const first = String(raw).match(/[^.!?]+[.!?]/)?.[0]?.trim() || "";
+    if (!first) continue;
+    // Nur eindeutig positiv formulierte Sätze als Ressource verwenden.
+    if (/\b(?:sicher|gelingt|kann|beherrscht|nutzt|erkennt|liest|schreibt|benennt|versteht)\b/i.test(first)
+        && !/\b(?:nicht|noch|Unterstützung|schwer|unsicher|benötigt)\b/i.test(first)) {
+      return first;
+    }
+  }
+  return "";
+}
+
+function applyDevelopmentalTextPrototype({ area, gradeBand, entries = [], suggestion }) {
+  if (!suggestion) return suggestion;
+  const resource = developmentalResourceSentence(area, gradeBand, entries);
+  const currentIst = normalizeVisiblePlanPlaceholders(String(suggestion.istStand || "").trim());
+  if (resource && currentIst && !normalizeMatchValue(currentIst).includes(normalizeMatchValue(resource))) {
+    suggestion.istStand = `${normalizeVisiblePlanPlaceholders(resource)} ${currentIst}`;
+  } else {
+    suggestion.istStand = currentIst;
+  }
+  suggestion.istStand = composeDevelopmentalIstStandText(suggestion.istStand);
+
+  // Pilot v303:
+  // Die Entwicklungsdynamik betrifft den Ist-Stand. Förderziele, Maßnahmen und
+  // Evaluation bleiben übersichtliche Aufzählungen. Eine zusätzliche Überschrift
+  // "Ziele für den Förderzeitraum" im Textfeld wird entfernt, da die Oberfläche
+  // den Bereich bereits als (Förder-) Ziele kennzeichnet.
+  if (suggestion.ziele) {
+    const goalItems = String(suggestion.ziele)
+      .replace(/\r/g, "")
+      .split("\n")
+      .map((line) => line.trim())
+      .filter((line) => line && !/^(?:Ziele für den Förderzeitraum|Im Förderzeitraum soll .* zunehmend):?$/i.test(line))
+      .map((line) => line.replace(/^[–—•*-]\s*/, "").trim())
+      .filter(Boolean);
+    suggestion.ziele = removeRepeatedSentences(goalItems)
+      .map((item) => bulletSuggestion(item))
+      .filter(Boolean)
+      .join("\n");
+  }
+
+  suggestion._developmentalPrototype = true;
+  return suggestion;
 }
 
 function composeModuleBasedSupportPlan({ area, gradeBand, entries = [], formatOptions, variantOffset = 0 }) {
@@ -10544,6 +10810,21 @@ function composeModuleBasedSupportPlan({ area, gradeBand, entries = [], formatOp
   } else if (pilotIstStand) {
     suggestion.istStand = pilotIstStand;
   }
+
+  // Prototyp v302: entwicklungsorientierte Textfassung für drei Pilotbereiche.
+  // Fachliche Inhalte bleiben aus den vorhandenen Förderketten; es werden keine
+  // neuen Kompetenzen erfunden. Eine positive Ressource wird nur ergänzt, wenn
+  // im Kompetenzraster tatsächlich mindestens eine Kompetenz als "gesichert"
+  // eingeschätzt und dafür eine hinterlegte Förderkette gefunden wurde.
+  if (["Lern- und Leistungsverhalten", "Sprache / Kommunikation", "Deutsch"].includes(area)) {
+    applyDevelopmentalTextPrototype({
+      area,
+      gradeBand,
+      entries: selectedCompetencies,
+      suggestion
+    });
+  }
+
   const hasAnyText = columns.some((column) => String(suggestion[column.key] || "").trim());
   if (!hasAnyText) {
     return {
@@ -10732,6 +11013,12 @@ function composeModuleBasedSupportPlan({ area, gradeBand, entries = [], formatOp
       }
     }
   }
+  const istStandChains = speechChainSuggestion?.chains || [];
+  const groupedIstStand = istStandChains.length
+    ? groupedIstStandFromChains(area, istStandChains)
+    : groupedIstStandFromEntries(area, activeEntries, suggestion.istStand);
+  if (groupedIstStand) suggestion.istStand = groupedIstStand;
+
   suggestion._meta = meta;
   const displayedSuggestion = area === "Sprache / Kommunikation"
     ? applySpeechTermDisplayToSuggestion(suggestion, activeEntries)
@@ -10751,7 +11038,7 @@ function composeModuleBasedSupportPlan({ area, gradeBand, entries = [], formatOp
 }
 
 function modulePairForComposerEntry(entry, area, gradeBand, variantOffset = 0) {
-  if (!entry || !["unsicher", "teilweise unsicher"].includes(entry.rating)) return null;
+  if (!entry || !["unsicher", "Förderbedarf"].includes(entry.rating)) return null;
   const fields = moduleFieldsForComposerTopic(area, gradeBand, entry.topic);
   if (!fields) return null;
   const offset = variantOffset + (entry.index || 0);
@@ -10785,7 +11072,7 @@ function modulePairForComposerEntry(entry, area, gradeBand, variantOffset = 0) {
 function ensureLinkedComposerPairs(rawPairs = [], { area, gradeBand, entries = [], variantOffset = 0 } = {}) {
   const result = [...rawPairs];
   const activeEntryCount = entries.filter((entry) =>
-    ["unsicher", "teilweise unsicher"].includes(entry.rating)
+    ["unsicher", "Förderbedarf"].includes(entry.rating)
   ).length;
   const limit = area === "Wahrnehmung"
     ? Math.max(1, activeEntryCount)
@@ -10797,7 +11084,7 @@ function ensureLinkedComposerPairs(rawPairs = [], { area, gradeBand, entries = [
     : normalizeMatchValue(topic);
   const usedTopics = new Set(result.map((pair) => topicKeyFor(pair.composerTopic || pair.kompetenz)));
   entries
-    .filter((entry) => ["unsicher", "teilweise unsicher"].includes(entry.rating))
+    .filter((entry) => ["unsicher", "Förderbedarf"].includes(entry.rating))
     .sort((left, right) => area === "Wahrnehmung"
       ? perceptionTopicOrderIndex(left.topic) - perceptionTopicOrderIndex(right.topic)
         || left.index - right.index
@@ -10913,6 +11200,7 @@ function selectMatchingSupportChains(entries, area, gradeBand, supportChains) {
       && isUsableSupportChain(chain)
     ).map((chain) => ({
       ...chain,
+      rating: normalizeCompetenceRatingValue(entry.rating),
       composerTopic: entry.topic,
       observation: entry.observation,
       observationDetails: entry.observationDetails
@@ -10920,12 +11208,92 @@ function selectMatchingSupportChains(entries, area, gradeBand, supportChains) {
   );
 }
 
+function chainProfessionalTopic(chain = {}) {
+  const composerTopic = String(chain.composerTopic || "").trim();
+  if (composerTopic) return composerTopic;
+
+  const competence = String(chain.kompetenz || "").trim();
+  const group = String(chain.gruppe || "").trim();
+
+  // "Förderkette 1" usw. ist nur eine technische Variantenbezeichnung
+  // und darf niemals als fachliche Überschrift im Förderplan erscheinen.
+  if (competence && !/^Förderkette\s+\d+$/i.test(competence)) return competence;
+  return group || competence;
+}
+
+function professionalIstStandHeading(area, topic = "") {
+  if (area === "Sprache / Kommunikation") {
+    const canonical = canonicalSpeechCompetenceTopic(topic);
+    const labels = {
+      "Aussprache / Artikulation": "Artikulation / phonetisch-phonologische Ebene",
+      "Lautwahrnehmung / phonologische Bewusstheit": "Lautwahrnehmung / phonologische Bewusstheit",
+      "Wortschatz / Wortbedeutung": "Semantisch-lexikalische Ebene",
+      "Grammatik / Satzbildung": "Morphologisch-syntaktische Ebene",
+      "Sprachverständnis / Arbeitsaufträge": "Sprachverständnis / rezeptive Sprachverarbeitung",
+      "Erzählfähigkeit / Versprachlichen": "Narrative Fähigkeiten",
+      "Kommunikation / Gesprächsverhalten": "Pragmatisch-kommunikative Ebene",
+      "Stimme / Sprechweise": "Stimmlich-prosodischer Bereich",
+      "Redefluss / Wortfindung": "Redefluss / Wortabruf"
+    };
+    return labels[canonical] || canonical;
+  }
+  return professionalGroupTitleForTopic(area, topic) || topic;
+}
+
+function groupedIstStandFromChains(area, chains = []) {
+  const groups = [];
+  const map = new Map();
+  chains.forEach((chain) => {
+    const text = cleanSuggestionSentence(chain.istStand);
+    if (!text) return;
+    const topic = chainProfessionalTopic(chain);
+    const heading = professionalIstStandHeading(area, topic);
+    if (!map.has(heading)) {
+      const group = { heading, sentences: [] };
+      map.set(heading, group);
+      groups.push(group);
+    }
+    map.get(heading).sentences.push(text);
+  });
+  return groups.map((group) => {
+    const text = removeRepeatedSentences(group.sentences).join(" ").trim();
+    return text ? `${group.heading}: ${text}` : "";
+  }).filter(Boolean).join("\n");
+}
+
+function groupedIstStandFromEntries(area, entries = [], fallbackText = "") {
+  const groups = [];
+  const map = new Map();
+  entries.filter((entry) => ["Förderbedarf", "unsicher"].includes(entry.rating)).forEach((entry) => {
+    const heading = professionalIstStandHeading(area, entry.topic);
+    const observation = cleanSuggestionSentence(entry.observation || "");
+    if (!map.has(heading)) {
+      const group = { heading, sentences: [] };
+      map.set(heading, group);
+      groups.push(group);
+    }
+    if (observation) map.get(heading).sentences.push(observation);
+  });
+  if (!groups.length) return fallbackText;
+  const fallbackSentences = String(fallbackText || "").split(/(?<=[.!?])\s+/).filter(Boolean);
+  return groups.map((group, index) => {
+    const own = removeRepeatedSentences(group.sentences).join(" ").trim();
+    const text = own || (groups.length === 1 ? fallbackText : fallbackSentences[index] || "");
+    return text ? `${group.heading}: ${text}` : "";
+  }).filter(Boolean).join("\n");
+}
+
+function professionalTopicLabel(area, topic = "") {
+  const group = professionalGroupTitleForTopic(area, topic);
+  return group ? `${topic} – ${group}` : topic;
+}
+
 function selectedCompetencyEntries({ ratings, observations = {} }) {
-  const ratingOrder = { "gesichert": 0, "teilweise unsicher": 1, "unsicher": 2 };
+  const ratingOrder = { "gesichert": 0, "Förderbedarf": 1, "unsicher": 2 };
   return Object.entries(ratings || {})
     .map(([topic, rating], index) => ({
       topic,
-      rating: rating === "Förderbedarf" ? "unsicher" : rating,
+      rating: normalizeCompetenceRatingValue(rating),
       observation: competenceObservationText(observations?.[topic]),
       observationDetails: normalizeCompetenceObservationEntry(observations?.[topic]),
       index
@@ -10955,9 +11323,9 @@ function selectComposerSupportChains({ area, gradeBand, ratings, observations = 
 function selectComposerChainPairs(chains) {
   const pairs = [];
   chains
-    .filter((chain) => chain.rating === "unsicher" || chain.rating === "teilweise unsicher")
+    .filter((chain) => chain.rating === "unsicher" || chain.rating === "Förderbedarf")
     .sort((left, right) => {
-      const priority = { "unsicher": 0, "teilweise unsicher": 1 };
+      const priority = { "unsicher": 0, "Förderbedarf": 1 };
       return (priority[left.rating] ?? 2) - (priority[right.rating] ?? 2);
     })
     .forEach((chain) => {
@@ -10973,7 +11341,7 @@ function selectComposerChainPairs(chains) {
 function emotionalGoalLimitForChains(chains = []) {
   const activeTopics = new Set(
     chains
-      .filter((chain) => chain.rating === "unsicher" || chain.rating === "teilweise unsicher")
+      .filter((chain) => chain.rating === "unsicher" || chain.rating === "Förderbedarf")
       .map((chain) => chain.composerTopic || chain.kompetenz)
       .filter(Boolean)
   );
@@ -11634,7 +12002,7 @@ function selectLearningComposerPairs(chains) {
   const usedTopics = new Set();
   sortChainsBySupportNeed(chains.filter((chain) =>
     chain.bereich === "Lern- und Leistungsverhalten"
-    && (chain.rating === "unsicher" || chain.rating === "teilweise unsicher")
+    && (chain.rating === "unsicher" || chain.rating === "Förderbedarf")
   )).forEach((chain) => {
     if (pairs.length >= limit) return;
     const topicKey = normalizeMatchValue(chain.composerTopic || chain.kompetenz);
@@ -11669,7 +12037,7 @@ function selectSpeechComposerPairs(chains) {
   const usedTopics = new Set();
   sortChainsBySupportNeed(chains.filter((chain) =>
     chain.bereich === "Sprache / Kommunikation"
-    && (chain.rating === "unsicher" || chain.rating === "teilweise unsicher")
+    && (chain.rating === "unsicher" || chain.rating === "Förderbedarf")
   )).forEach((chain) => {
     if (pairs.length >= limit) return;
     const topicKey = normalizeMatchValue(chain.composerTopic || chain.kompetenz);
@@ -11704,7 +12072,7 @@ function selectMotorComposerPairs(chains) {
   const usedTopics = new Set();
   sortChainsBySupportNeed(chains.filter((chain) =>
     chain.bereich === "Motorik"
-    && (chain.rating === "unsicher" || chain.rating === "teilweise unsicher")
+    && (chain.rating === "unsicher" || chain.rating === "Förderbedarf")
   )).forEach((chain) => {
     if (pairs.length >= limit) return;
     const topicKey = normalizeMatchValue(chain.composerTopic || chain.kompetenz);
@@ -11767,7 +12135,7 @@ function selectPerceptionComposerPairs(chains) {
 
 function selectedPerceptionTopicsFromEntries(entries = []) {
   return [...new Set(entries
-    .filter((entry) => entry.rating === "unsicher" || entry.rating === "teilweise unsicher")
+    .filter((entry) => entry.rating === "unsicher" || entry.rating === "Förderbedarf")
     .map((entry) => canonicalPerceptionCompetenceTopic(entry.topic))
     .filter((topic) => perceptionCompetenceTopics.includes(topic))
   )].sort((left, right) => perceptionTopicOrderIndex(left) - perceptionTopicOrderIndex(right));
@@ -11775,7 +12143,7 @@ function selectedPerceptionTopicsFromEntries(entries = []) {
 
 function perceptionChainsFromEntries(entries = []) {
   return entries
-    .filter((entry) => entry.rating === "unsicher" || entry.rating === "teilweise unsicher")
+    .filter((entry) => entry.rating === "unsicher" || entry.rating === "Förderbedarf")
     .map((entry) => {
       const topic = canonicalPerceptionCompetenceTopic(entry.topic);
       return {
@@ -11839,7 +12207,7 @@ function selectPerceptionComposerPairsLegacy(chains) {
   const usedTopics = new Set();
   sortChainsBySupportNeed(chains.filter((chain) =>
     chain.bereich === "Wahrnehmung"
-    && (chain.rating === "unsicher" || chain.rating === "teilweise unsicher")
+    && (chain.rating === "unsicher" || chain.rating === "Förderbedarf")
   )).forEach((chain) => {
     if (pairs.length >= limit) return;
     const topicKey = normalizeMatchValue(chain.composerTopic || chain.kompetenz);
@@ -11874,7 +12242,7 @@ function selectCognitionComposerPairs(chains) {
   const usedTopics = new Set();
   sortChainsBySupportNeed(chains.filter((chain) =>
     chain.bereich === "Kognition"
-    && (chain.rating === "unsicher" || chain.rating === "teilweise unsicher")
+    && (chain.rating === "unsicher" || chain.rating === "Förderbedarf")
   )).forEach((chain) => {
     if (pairs.length >= limit) return;
     const topicKey = normalizeMatchValue(chain.composerTopic || chain.kompetenz);
@@ -11909,7 +12277,7 @@ function selectGermanComposerPairs(chains, gradeBand = gradeBandForPlan()) {
   const usedTopics = new Set();
   sortChainsBySupportNeed(chains.filter((chain) =>
     chain.bereich === "Deutsch"
-    && (chain.rating === "unsicher" || chain.rating === "teilweise unsicher")
+    && (chain.rating === "unsicher" || chain.rating === "Förderbedarf")
   )).forEach((chain) => {
     if (pairs.length >= limit) return;
     const topicKey = normalizeMatchValue(chain.composerTopic || chain.kompetenz);
@@ -11944,7 +12312,7 @@ function selectMathComposerPairs(chains, gradeBand = gradeBandForPlan()) {
   const usedTopics = new Set();
   sortChainsBySupportNeed(chains.filter((chain) =>
     chain.bereich === "Mathematik"
-    && (chain.rating === "unsicher" || chain.rating === "teilweise unsicher")
+    && (chain.rating === "unsicher" || chain.rating === "Förderbedarf")
   )).forEach((chain) => {
     if (pairs.length >= limit) return;
     const topicKey = normalizeMatchValue(chain.composerTopic || chain.kompetenz);
@@ -12406,7 +12774,7 @@ function customObservationSentence(text) {
 
 function istStandTargetLengthBySeverity(active = []) {
   const activeChains = active.filter((chain) =>
-    chain.rating === "teilweise unsicher" || chain.rating === "unsicher"
+    chain.rating === "Förderbedarf" || chain.rating === "unsicher"
   );
   const activeCount = activeChains.length;
   if (!activeCount) return 0;
@@ -12428,7 +12796,7 @@ function istStandTargetLengthBySeverity(active = []) {
 
 function compactComposerIstStandTargetLength(active = []) {
   const activeChains = active.filter((chain) =>
-    chain.rating === "teilweise unsicher" || chain.rating === "unsicher"
+    chain.rating === "Förderbedarf" || chain.rating === "unsicher"
   );
   const activeCount = activeChains.length;
   if (!activeCount) return 0;
@@ -12963,6 +13331,15 @@ function resourceSentenceFromCompetenceData(area, secured = [], partial = []) {
   return `In vertrauten Situationen zeigen sich ${joinGermanList(resources)} bereits erste Ansätze.`;
 }
 
+function partialCompetenceSentence(context, partial = []) {
+  const items = partial.slice(0, 3);
+  if (!items.length) return "";
+  if (items.length === 1) {
+    return `Im Bereich ${items[0]} zeigen sich bereits erste Ansätze; die Kompetenz ist jedoch noch nicht durchgängig sicher verfügbar.`;
+  }
+  return `In den Bereichen ${joinGermanList(items)} zeigen sich bereits erste Ansätze; die Kompetenzen sind jedoch noch nicht durchgängig sicher verfügbar.`;
+}
+
 function supportSentenceFromCompetenceData(area, uncertain = [], partial = []) {
   const context = areaIstStandContexts[area] || areaIstStandContexts["Weitere Fächer"];
   const priority = [...uncertain.slice(0, 2), ...partial.slice(0, 2)].slice(0, 3);
@@ -12973,7 +13350,7 @@ function supportSentenceFromCompetenceData(area, uncertain = [], partial = []) {
   if (uncertain.length) {
     return `${context.intro} ${context.supportVerb}. Die Sicherheit ist besonders ${joinGermanList(priority)} noch eingeschränkt.`;
   }
-  return `${context.intro} zeigen sich ${joinGermanList(priority)} noch Unsicherheiten.`;
+  return partialCompetenceSentence(context, partial);
 }
 
 function competenceRecordsForIstStand(entries = [], selectedChains = [], area = "") {
@@ -13016,7 +13393,7 @@ function buildCompetenceBasedIstStandSentences({ area, gradeBand, selectedChains
     if (synthesized.length) return synthesized;
   }
   const secured = competenceSummaryItems(selectedChains, "gesichert");
-  const partial = competenceSummaryItems(activeChains, "teilweise unsicher");
+  const partial = competenceSummaryItems(activeChains, "Förderbedarf");
   const uncertain = competenceSummaryItems(activeChains, "unsicher");
   const observations = allObservationTextsForChains(activeChains);
   const condition = selectConditionFromObservations(area, observations);
@@ -13090,7 +13467,7 @@ function ensureIstStandCoversActiveCompetenceNeeds(sentences = [], selectedChain
     .replace(/^bei dem\s+/i, "in dem ")
     .replace(/^bei\s+/i, "im Bereich ");
   const uncertain = missing.filter((item) => item.rating === "unsicher").map((item) => asGrammaticalAreaPhrase(item.phrase));
-  const partial = missing.filter((item) => item.rating === "teilweise unsicher").map((item) => asGrammaticalAreaPhrase(item.phrase));
+  const partial = missing.filter((item) => item.rating === "Förderbedarf").map((item) => asGrammaticalAreaPhrase(item.phrase));
   const additions = [
     uncertain.length ? `Die Sicherheit ist außerdem ${joinGermanList(uncertain)} noch eingeschränkt.` : "",
     partial.length ? `Auch ${joinGermanList(partial)} zeigen sich erste Ansätze, die noch gefestigt werden müssen.` : ""
@@ -13110,7 +13487,7 @@ function removeBlockedIstStandStarts(sentences = []) {
 
 function activeSupportChainsForIstStand(chains = []) {
   return sortChainsBySupportNeed(chains.filter((chain) =>
-    chain.rating === "teilweise unsicher" || chain.rating === "unsicher"
+    chain.rating === "Förderbedarf" || chain.rating === "unsicher"
   ));
 }
 
@@ -13152,7 +13529,7 @@ function shapeGeneralIstStandSentences(sentences = [], selectedChains = [], area
 
 function activeEmotionalChains(chains = []) {
   return sortChainsBySupportNeed(chains.filter((chain) =>
-    chain.rating === "teilweise unsicher" || chain.rating === "unsicher"
+    chain.rating === "Förderbedarf" || chain.rating === "unsicher"
   ));
 }
 
@@ -13484,7 +13861,7 @@ const speechCategoryPriority = [
 function activeLearningChains(chains = []) {
   return sortChainsBySupportNeed(chains.filter((chain) =>
     chain.bereich === "Lern- und Leistungsverhalten"
-    && (chain.rating === "teilweise unsicher" || chain.rating === "unsicher")
+    && (chain.rating === "Förderbedarf" || chain.rating === "unsicher")
   ));
 }
 
@@ -13692,7 +14069,7 @@ function learningObservationIstStandSentencesForChains(chains = [], variantOffse
 function activeSpeechChains(chains = []) {
   return sortChainsBySupportNeed(chains.filter((chain) =>
     chain.bereich === "Sprache / Kommunikation"
-    && (chain.rating === "teilweise unsicher" || chain.rating === "unsicher")
+    && (chain.rating === "Förderbedarf" || chain.rating === "unsicher")
   ));
 }
 
@@ -14096,7 +14473,7 @@ const motorCategoryPriority = ["fine", "grapho", "gross"];
 function activeMotorChains(chains = []) {
   return sortChainsBySupportNeed(chains.filter((chain) =>
     chain.bereich === "Motorik"
-    && (chain.rating === "teilweise unsicher" || chain.rating === "unsicher")
+    && (chain.rating === "Förderbedarf" || chain.rating === "unsicher")
   ));
 }
 
@@ -14283,7 +14660,7 @@ const perceptionCategoryPriority = ["visual", "auditory"];
 function activePerceptionChains(chains = []) {
   return sortChainsBySupportNeed(chains.filter((chain) =>
     chain.bereich === "Wahrnehmung"
-    && (chain.rating === "teilweise unsicher" || chain.rating === "unsicher")
+    && (chain.rating === "Förderbedarf" || chain.rating === "unsicher")
   ));
 }
 
@@ -14431,7 +14808,7 @@ function perceptionTopicOrderIndex(topic = "") {
 }
 
 function sortedPerceptionChainsByTopic(chains = []) {
-  const ratingWeight = { unsicher: 2, "teilweise unsicher": 1 };
+  const ratingWeight = { unsicher: 2, "Förderbedarf": 1 };
   return activePerceptionChains(chains).sort((left, right) =>
     perceptionTopicOrderIndex(left.composerTopic || left.kompetenz) - perceptionTopicOrderIndex(right.composerTopic || right.kompetenz)
     || (ratingWeight[right.rating] || 0) - (ratingWeight[left.rating] || 0)
@@ -14477,7 +14854,7 @@ const cognitionCategoryPriority = ["memory", "strategies", "problem", "transfer"
 function activeCognitionChains(chains = []) {
   return sortChainsBySupportNeed(chains.filter((chain) =>
     chain.bereich === "Kognition"
-    && (chain.rating === "teilweise unsicher" || chain.rating === "unsicher")
+    && (chain.rating === "Förderbedarf" || chain.rating === "unsicher")
   ));
 }
 
@@ -14732,7 +15109,7 @@ const germanCategoryPriority34 = ["reading-fluency", "text-comprehension", "read
 function activeGermanChains(chains = []) {
   return sortChainsBySupportNeed(chains.filter((chain) =>
     chain.bereich === "Deutsch"
-    && (chain.rating === "teilweise unsicher" || chain.rating === "unsicher")
+    && (chain.rating === "Förderbedarf" || chain.rating === "unsicher")
   ));
 }
 
@@ -15051,7 +15428,7 @@ const mathCategoryPriority34 = ["number", "place", "operation", "written", "mult
 function activeMathChains(chains = []) {
   return sortChainsBySupportNeed(chains.filter((chain) =>
     chain.bereich === "Mathematik"
-    && (chain.rating === "teilweise unsicher" || chain.rating === "unsicher")
+    && (chain.rating === "Förderbedarf" || chain.rating === "unsicher")
   ));
 }
 
@@ -15434,7 +15811,7 @@ function mathObservationIstStandSentencesForChains(chains = [], gradeBand = grad
 }
 
 function sortChainsBySupportNeed(chains = []) {
-  const priority = { "unsicher": 0, "teilweise unsicher": 1, "gesichert": 2 };
+  const priority = { "unsicher": 0, "Förderbedarf": 1, "gesichert": 2 };
   return [...chains].sort((left, right) =>
     (priority[left.rating] ?? 3) - (priority[right.rating] ?? 3)
     || String(left.gruppe || left.kompetenz).localeCompare(String(right.gruppe || right.kompetenz), "de")
@@ -15455,7 +15832,7 @@ function composeIstStandFromSupportGroups({ area, gradeBand, selectedChains }) {
       .map((chain) => chain.istStand)
   );
   const activeChains = sortChainsBySupportNeed(selectedChains.filter((chain) =>
-    chain.rating === "teilweise unsicher" || chain.rating === "unsicher"
+    chain.rating === "Förderbedarf" || chain.rating === "unsicher"
   ));
   const groupedChains = new Map();
   activeChains.forEach((chain) => {
@@ -17122,11 +17499,77 @@ function renderIdMappingList() {
   `;
 }
 
+function workspaceSidebar() {
+  const items = [
+    { label: "Grunddaten", icon: "○", step: "basic", phases: [1] },
+    { label: "Kompetenzen", icon: "◇", step: "competence", phases: [2] },
+    { label: "Förderplan bearbeiten", icon: "▤", step: "raster", phases: [3] },
+    { label: "Vereinbarungen", icon: "✓", step: "agreements", phases: [3] },
+    { label: "Qualitätscheck", icon: "◎", step: "quality", phases: [3] },
+    { label: "Ausgabe", icon: "□", step: "print", phases: [4] },
+    { label: "Speicher", icon: "⌁", step: "storage", phases: [4] }
+  ];
+  const phase = workspacePhase();
+  return `
+    <aside class="workspace-sidebar ${workspaceSidebarCollapsed ? "is-collapsed" : ""}" aria-label="Arbeitsnavigation">
+      <div class="workspace-brand">
+        <img src="brand-mark.png" alt="" aria-hidden="true" />
+        <div class="workspace-brand-text">
+          <strong>FörderKompass</strong>
+          <span>Individuell. Strukturiert. Wirksam.</span>
+        </div>
+      </div>
+
+      <button
+        class="workspace-sidebar-toggle"
+        type="button"
+        data-action="toggle-workspace-sidebar"
+        aria-label="${workspaceSidebarCollapsed ? "Menü ausklappen" : "Menü einklappen"}"
+        title="${workspaceSidebarCollapsed ? "Menü ausklappen" : "Menü einklappen"}"
+      >${workspaceSidebarCollapsed ? "›" : "‹"}</button>
+
+      <nav class="workspace-nav">
+        ${items.map((item) => `
+          <button
+            class="workspace-nav-item ${item.phases.includes(phase) && currentStep === item.step ? "is-active" : ""}"
+            type="button"
+            data-action="step"
+            data-step="${escapeHtml(item.step)}"
+            title="${escapeHtml(item.label)}"
+          >
+            <span class="workspace-nav-icon" aria-hidden="true">${item.icon}</span>
+            <span class="workspace-nav-label">${escapeHtml(item.label)}</span>
+          </button>
+        `).join("")}
+      </nav>
+
+      <div class="workspace-sidebar-bottom">
+        <button class="workspace-nav-item" type="button" data-action="start" title="Zur Startseite">
+          <span class="workspace-nav-icon" aria-hidden="true">⌂</span>
+          <span class="workspace-nav-label">Startseite</span>
+        </button>
+        <button class="workspace-nav-item" type="button" data-action="support" title="Unterstützen">
+          <span class="workspace-nav-icon" aria-hidden="true">♡</span>
+          <span class="workspace-nav-label">Unterstützen</span>
+        </button>
+      </div>
+    </aside>
+  `;
+}
+
 function topBar() {
   return `
-    <div class="topbar">
+    ${workspaceSidebar()}
+    <header class="workspace-topbar">
+      <div class="workspace-context-label">
+        <span>Förderplan</span>
+        <strong>${escapeHtml(plan.meta?.klasse ? `Klasse ${plan.meta.klasse}` : "Neuer Plan")}</strong>
+      </div>
       ${progress()}
-    </div>
+      <div class="workspace-top-actions">
+        <button class="quiet-button" type="button" data-action="save-plan">Entwurf speichern</button>
+      </div>
+    </header>
   `;
 }
 
@@ -17490,13 +17933,106 @@ function freeChainKey(chain, index = 0) {
   return [chain.bereich || "", chain.klasse || "", chain.kompetenz || "", chain.gruppe || "", chain.rating || "", index].join("|");
 }
 
+
+function normalizeQuickStatusValue(value = "") {
+  return value === "observe" ? "need" : value;
+}
+
+
+
+function richTemplateToFreeChain(area, template = {}, index = 0) {
+  const topics = Array.isArray(template.topics)
+    ? template.topics.map((topic) => String(topic || "").trim()).filter(Boolean)
+    : [];
+  const cognitionTopics = area === "Kognition" ? normalizedCognitionTemplateTopics(template) : [];
+  const effectiveTopics = cognitionTopics.length ? cognitionTopics : topics;
+  const group = effectiveTopics.length === 1
+    ? effectiveTopics[0]
+    : (effectiveTopics.length > 1 ? "Kombinierte Förderbereiche" : (template.label || "Weitere Förderketten"));
+  return {
+    bereich: area,
+    klasse: "",
+    gruppe: group,
+    kompetenz: template.label || (effectiveTopics.length === 1 ? effectiveTopics[0] : group),
+    variantIndex: index + 1,
+    rating: "Förderbedarf",
+    id: template.id || `${area}_${index + 1}`,
+    istStand: template.istStand || "",
+    ziel: template.ziele || template.ziel || "",
+    massnahme: template.massnahmen || template.massnahme || "",
+    evaluation: template.evaluation || ""
+  };
+}
+
+function richFreeSelectableChainsForArea(area, gradeBand = "") {
+  let templates = [];
+  if (area === "Lern- und Leistungsverhalten") {
+    templates = learningBroadSupportChainLibrary;
+  } else if (area === "Kognition") {
+    templates = cognitionBroadSupportChainLibrary;
+  } else if (area === "Motorik") {
+    templates = motorFocusTemplatePool();
+  } else if (area === "Wahrnehmung") {
+    templates = perceptionFocusTemplateLibrary;
+  } else if (area === "Emotionalität, Sozialverhalten") {
+    templates = [
+      ...emotionalSet1FocusTemplateLibrary,
+      ...emotionalSet2FocusTemplateLibrary,
+      ...emotionalSet3FocusTemplateLibrary,
+      ...emotionalSet4FocusTemplateLibrary,
+      ...emotionalSet5FocusTemplateLibrary
+    ];
+  } else if (area === "Deutsch") {
+    templates = gradeBand === "Klasse 3/4" ? german34FocusTemplateLibrary : german12FocusTemplateLibrary;
+  } else if (area === "Mathematik") {
+    templates = gradeBand === "Klasse 3/4" ? math34FocusTemplateLibrary : math12FocusTemplateLibrary;
+  }
+  const seen = new Set();
+  return templates
+    .map((template, index) => richTemplateToFreeChain(area, template, index))
+    .filter((chain) => isUsableSupportChain(chain))
+    .filter((chain) => {
+      const signature = [chain.gruppe, chain.kompetenz, chain.istStand,
+        Array.isArray(chain.ziel) ? chain.ziel.join("|") : chain.ziel,
+        Array.isArray(chain.massnahme) ? chain.massnahme.join("|") : chain.massnahme,
+        Array.isArray(chain.evaluation) ? chain.evaluation.join("|") : chain.evaluation].join("~");
+      if (seen.has(signature)) return false;
+      seen.add(signature);
+      return true;
+    });
+}
+
+function speechFreeSelectableChains() {
+  return speechPilotIstStandTopicOrder.flatMap((topic) => {
+    const variants = Array.isArray(speechSupportChainLibrary?.[topic])
+      ? speechSupportChainLibrary[topic]
+      : [];
+    return variants.map((chain, index) => ({
+      bereich: "Sprache / Kommunikation",
+      klasse: "",
+      gruppe: topic,
+      kompetenz: topic,
+      variantIndex: index + 1,
+      rating: "Förderbedarf",
+      id: chain.id || `sprache_${index + 1}`,
+      istStand: chain.istStand || "",
+      ziel: chain.ziele || chain.ziel || "",
+      massnahme: chain.massnahmen || chain.massnahme || "",
+      evaluation: chain.evaluation || ""
+    }));
+  }).filter((chain) => isUsableSupportChain(chain));
+}
+
 function freeSelectableChainsForArea(area) {
+  if (area === "Sprache / Kommunikation") return speechFreeSelectableChains();
   const gradeBand = gradeBandForArea(area);
+  const richChains = richFreeSelectableChainsForArea(area, gradeBand);
+  if (richChains.length) return richChains;
   const seen = new Set();
   return [...completeSupportChains, ...fallbackSupportChains]
     .filter((chain) => chain && chain.bereich === area)
     .filter((chain) => !chain.klasse || chain.klasse === gradeBand)
-    .filter((chain) => ["unsicher", "teilweise unsicher"].includes(chain.rating))
+    .filter((chain) => ["unsicher", "teilweise unsicher", "Förderbedarf"].includes(chain.rating))
     .filter((chain) => isUsableSupportChain(chain))
     .filter((chain) => {
       const pair = supportPairsForChain(chain)[0] || {};
@@ -17509,12 +18045,59 @@ function freeSelectableChainsForArea(area) {
     .sort((a, b) => String(a.kompetenz || "").localeCompare(String(b.kompetenz || ""), "de") || String(a.rating || "").localeCompare(String(b.rating || ""), "de"));
 }
 
-function freeChainRatingLabel(rating) {
-  return rating === "unsicher" ? "deutlicher Förderbedarf" : "teilweiser Förderbedarf";
+function freeChainRatingLabel() {
+  return "Förderbedarf";
+}
+
+
+function freeChainGroupLabel(chain = {}) {
+  return String(chain.gruppe || chain.kompetenz || "Weitere Förderketten").trim();
+}
+
+function freeChainGroups(chains = [], area = "") {
+  const available = new Set(chains.map((chain) => freeChainGroupLabel(chain)).filter(Boolean));
+  if (area === "Sprache / Kommunikation") {
+    return speechPilotIstStandTopicOrder.filter((topic) => available.has(topic));
+  }
+  if (area === "Kognition") {
+    return [
+      ...cognitionCompetenceTopics.filter((topic) => available.has(topic)),
+      ...[...available].filter((topic) => !cognitionCompetenceTopics.includes(topic)).sort((a, b) => a.localeCompare(b, "de"))
+    ];
+  }
+  if (area === "Motorik") {
+    return [
+      ...motorCompetenceTopics.filter((topic) => available.has(topic)),
+      ...[...available].filter((topic) => !motorCompetenceTopics.includes(topic)).sort((a, b) => a.localeCompare(b, "de"))
+    ];
+  }
+  if (area === "Wahrnehmung") {
+    return [
+      ...perceptionCompetenceTopics.filter((topic) => available.has(topic)),
+      ...[...available].filter((topic) => !perceptionCompetenceTopics.includes(topic)).sort((a, b) => a.localeCompare(b, "de"))
+    ];
+  }
+  return [...available].sort((a, b) => a.localeCompare(b, "de"));
+}
+
+function applyFreeChainFilters(modal) {
+  if (!modal) return;
+  const query = String(modal.querySelector("[data-free-chain-search]")?.value || "")
+    .trim().toLocaleLowerCase("de-DE");
+  const group = String(modal.querySelector("[data-free-chain-group-filter]")?.value || "");
+  modal.querySelectorAll("[data-free-chain-item]").forEach((item) => {
+    const matchesQuery = !query || String(item.dataset.freeChainSearchtext || "").includes(query);
+    const matchesGroup = !group || String(item.dataset.freeChainGroup || "") === group;
+    item.classList.toggle("hidden", !(matchesQuery && matchesGroup));
+  });
+  const visible = [...modal.querySelectorAll("[data-free-chain-item]")].filter((item) => !item.classList.contains("hidden")).length;
+  const result = modal.querySelector("[data-free-chain-visible-count]");
+  if (result) result.textContent = `${visible} ${visible === 1 ? "Förderkette" : "Förderketten"} in diesem Bereich`;
 }
 
 function renderFreeChainModal(row) {
   const chains = freeSelectableChainsForArea(row);
+  const groups = freeChainGroups(chains, row);
   const gradeBand = gradeBandForArea(row);
   const modal = document.createElement("div");
   modal.id = "free-chain-modal";
@@ -17532,43 +18115,89 @@ function renderFreeChainModal(row) {
         <button class="secondary-button" type="button" data-action="close-free-chain-modal">Schließen</button>
       </div>
       <div class="block-module-modal-body stack">
-        <p class="hint">Wähle eine oder mehrere zusammenhängende Förderketten aus. Daraus werden Ist-Stand, Ziele, Maßnahmen und Evaluation gemeinsam erstellt. Das Kompetenzraster wird dafür nicht benötigt.</p>
+        <p class="hint">Du stellst den Förderplan jetzt schrittweise zusammen: zuerst <strong>Ist-Stand</strong>, danach <strong>Ziele</strong>, <strong>Maßnahmen</strong> und zuletzt <strong>Evaluation</strong>. Nichts wird mehr automatisch vollständig übernommen.</p>
+        <div class="free-chain-stepper" data-free-chain-stepper>
+          <span class="active" data-free-chain-step-indicator="1">1 · Ist-Stand</span>
+          <span data-free-chain-step-indicator="2">2 · Ziele</span>
+          <span data-free-chain-step-indicator="3">3 · Maßnahmen</span>
+          <span data-free-chain-step-indicator="4">4 · Evaluation</span>
+        </div>
         ${chains.length ? `
-          <label class="field">
-            <span>Förderketten durchsuchen</span>
-            <input type="search" data-free-chain-search placeholder="z. B. Lesen, Aufmerksamkeit, Konfliktverhalten" />
-          </label>
+          <div data-free-chain-step-one>
+          <div class="free-chain-filter-grid">
+            <label class="field">
+              <span>Kompetenz- / Entwicklungsbereich</span>
+              <select data-free-chain-group-filter>
+                <option value="">Alle Bereiche</option>
+                ${groups.map((group) => `<option value="${escapeHtml(group)}">${escapeHtml(group)}</option>`).join("")}
+              </select>
+            </label>
+            <label class="field">
+              <span>Förderketten durchsuchen</span>
+              <input type="search" data-free-chain-search placeholder="Förderkette suchen" />
+            </label>
+          </div>
+          <p class="field-help free-chain-visible-count" data-free-chain-visible-count>${chains.length} Förderketten insgesamt</p>
           <div class="block-selection-toolbar">
             <button class="small-button quiet-button" type="button" data-action="clear-free-chain-selection">Auswahl leeren</button>
             <span class="field-help" data-free-chain-count>0 Förderketten ausgewählt</span>
           </div>
+
+          <section class="free-chain-order-panel" data-free-chain-order-panel>
+            <div class="free-chain-order-header">
+              <div>
+                <strong>Ausgewählte Formulierungen und Reihenfolge</strong>
+                <p class="field-help">Hier siehst du deine ausgewählten Ist-Stand-Formulierungen. Mit ↑ und ↓ legst du die Reihenfolge im Förderplan fest.</p>
+              </div>
+            </div>
+            <div data-free-chain-order-list>
+              <p class="field-help">Noch keine Förderkette ausgewählt.</p>
+            </div>
+            <div class="free-chain-order-actions-main">
+              <button class="primary" type="button" data-action="free-chain-next-step" data-free-chain-next="2">Ist-Stand übernehmen und weiter zu den Zielen</button>
+            </div>
+          </section>
+
           <div class="block-list" data-free-chain-list>
             ${chains.map((chain, index) => {
               const key = freeChainKey(chain, index);
-              const firstIst = istStandVariantsForChain(chain)[0]?.text || "";
+              const firstIst = normalizeVisiblePlanPlaceholders(istStandVariantsForChain(chain)[0]?.text || "");
               const firstPair = supportPairsForChain(chain)[0] || {};
-              const search = [chain.kompetenz, chain.gruppe, chain.rating, firstIst, firstPair.ziel].join(" ").toLocaleLowerCase("de-DE");
+              const ziel = normalizeVisiblePlanPlaceholders(firstPair.ziel || "");
+              const massnahme = normalizeVisiblePlanPlaceholders(firstPair.massnahme || "");
+              const evaluation = normalizeVisiblePlanPlaceholders(firstPair.evaluation || "");
+              const search = [chain.kompetenz, chain.gruppe, firstIst, ziel, massnahme, evaluation]
+                .join(" ")
+                .toLocaleLowerCase("de-DE");
               return `
-                <label class="block-list-item" data-free-chain-item data-free-chain-searchtext="${escapeHtml(search)}">
+                <label class="block-list-item free-chain-full-card" data-free-chain-item data-free-chain-group="${escapeHtml(freeChainGroupLabel(chain))}" data-free-chain-searchtext="${escapeHtml(search)}">
                   <input type="checkbox" data-free-chain-select data-free-chain-index="${index}" value="${escapeHtml(key)}" />
-                  <div>
-                    <strong>${escapeHtml(chain.kompetenz || "Förderkette")}</strong>
-                    <span>${escapeHtml(chain.gruppe ? `${chain.gruppe} · ${freeChainRatingLabel(chain.rating)}` : freeChainRatingLabel(chain.rating))}</span>
-                    ${firstPair.ziel ? `<p class="field-help"><strong>Ziel:</strong> ${escapeHtml(firstPair.ziel)}</p>` : ""}
+                  <div class="free-chain-full-content">
+                    <strong class="free-chain-title">${escapeHtml(row === "Sprache / Kommunikation" ? (chain.gruppe || "Sprachentwicklung") : (chain.kompetenz || "Förderkette"))}</strong>
+                    <span class="free-chain-group">${escapeHtml(row === "Sprache / Kommunikation" ? (chain.kompetenz || "Förderkette") : (chain.gruppe || ""))}</span>
+                    ${firstIst ? `<p><strong>Ist-Stand:</strong> ${escapeHtml(firstIst)}</p>` : ""}
                   </div>
                 </label>`;
             }).join("")}
           </div>
-          <div class="actions">
-            <button class="primary" type="button" data-action="apply-free-chain-selection" data-free-chain-row="${escapeHtml(row)}">Auswahl in Förderplan übernehmen</button>
+          <div class="actions free-chain-bottom-actions">
             <button class="secondary-button" type="button" data-action="close-free-chain-modal">Abbrechen</button>
           </div>
+          </div>
+          <div class="hidden" data-free-chain-choice-step></div>
           <p class="field-help" data-free-chain-status aria-live="polite"></p>
         ` : `<p class="notice">Für diesen Förderbereich sind derzeit keine frei auswählbaren Förderketten hinterlegt.</p>`}
       </div>
     </div>`;
   app.appendChild(modal);
-  modal.querySelector("[data-free-chain-search]")?.focus();
+  modal.dataset.freeChainRow = row;
+  modal.dataset.freeChainOrder = "[]";
+  modal.dataset.freeChainStep = "1";
+  modal.dataset.freeChainWizardSelections = "{}";
+  applyFreeChainFilters(modal);
+  renderFreeChainOrder(modal);
+  renderFreeChainWizardStep(modal, 1);
+  modal.querySelector("[data-free-chain-group-filter]")?.focus();
 }
 
 function closeFreeChainModal() {
@@ -17585,30 +18214,359 @@ function updateFreeChainSelectionCount(modal) {
   if (target) target.textContent = `${count} ${count === 1 ? "Förderkette" : "Förderketten"} ausgewählt`;
 }
 
-function applyFreeChainSelection(row, modal) {
-  const available = freeSelectableChainsForArea(row);
-  const indexes = [...(modal?.querySelectorAll("[data-free-chain-select]:checked") || [])]
+
+function freeChainOrderIndexes(modal) {
+  if (!modal) return [];
+  try {
+    const parsed = JSON.parse(modal.dataset.freeChainOrder || "[]");
+    return Array.isArray(parsed)
+      ? parsed.map(Number).filter((index) => Number.isInteger(index))
+      : [];
+  } catch {
+    return [];
+  }
+}
+
+function freeChainOrderLabel(chain = {}, row = "", position = 0) {
+  const topic = chainProfessionalTopic(chain);
+  const heading = professionalIstStandHeading(row, topic);
+
+  if (heading) return heading;
+
+  const group = String(chain.gruppe || "").trim();
+  const title = String(chain.kompetenz || "").trim();
+  if (group) return group;
+  if (title && !/^Förderkette\s+\d+$/i.test(title)) return title;
+  return "Ausgewählte Formulierung";
+}
+
+function syncFreeChainSelectionOrder(modal, changedInput = null) {
+  if (!modal) return;
+  const checkedIndexes = [...modal.querySelectorAll("[data-free-chain-select]:checked")]
     .map((input) => Number(input.dataset.freeChainIndex))
-    .filter((index) => Number.isInteger(index) && available[index]);
-  const status = modal?.querySelector("[data-free-chain-status]");
-  if (!indexes.length) {
-    if (status) status.textContent = "Bitte mindestens eine Förderkette auswählen.";
+    .filter((index) => Number.isInteger(index));
+  const checked = new Set(checkedIndexes);
+  let order = freeChainOrderIndexes(modal).filter((index) => checked.has(index));
+
+  if (changedInput) {
+    const changedIndex = Number(changedInput.dataset.freeChainIndex);
+    if (changedInput.checked && Number.isInteger(changedIndex) && !order.includes(changedIndex)) {
+      order.push(changedIndex);
+    }
+  }
+
+  checkedIndexes.forEach((index) => {
+    if (!order.includes(index)) order.push(index);
+  });
+
+  modal.dataset.freeChainOrder = JSON.stringify(order);
+  updateFreeChainSelectionCount(modal);
+  renderFreeChainOrder(modal);
+}
+
+function renderFreeChainOrder(modal) {
+  const list = modal?.querySelector("[data-free-chain-order-list]");
+  if (!list) return;
+  const row = modal.dataset.freeChainRow || "";
+  const available = freeSelectableChainsForArea(row);
+  const order = freeChainOrderIndexes(modal)
+    .filter((index) => available[index])
+    .filter((index) => modal.querySelector(`[data-free-chain-select][data-free-chain-index="${index}"]`)?.checked);
+
+  if (!order.length) {
+    list.innerHTML = '<p class="field-help">Noch keine Förderkette ausgewählt.</p>';
     return;
   }
-  const selected = applyComposerVariants(indexes.map((index) => available[index]), 0);
+
+  list.innerHTML = order.map((index, position) => {
+    const chain = available[index];
+    const label = freeChainOrderLabel(chain, row, position);
+    return `
+      <div class="free-chain-order-item">
+        <span class="free-chain-order-number">${position + 1}.</span>
+        <div class="free-chain-order-text">
+          <span class="free-chain-order-label">${escapeHtml(label)}</span>
+          <span class="free-chain-order-formulation">${escapeHtml(normalizeVisiblePlanPlaceholders(istStandVariantsForChain(chain)[0]?.text || chain.istStand || ""))}</span>
+        </div>
+        <div class="free-chain-order-actions" aria-label="Reihenfolge ändern">
+          <button class="small-button quiet-button" type="button"
+            data-action="move-free-chain-up" data-free-chain-index="${index}"
+            ${position === 0 ? "disabled" : ""} aria-label="Förderkette nach oben">↑</button>
+          <button class="small-button quiet-button" type="button"
+            data-action="move-free-chain-down" data-free-chain-index="${index}"
+            ${position === order.length - 1 ? "disabled" : ""} aria-label="Förderkette nach unten">↓</button>
+        </div>
+      </div>`;
+  }).join("");
+}
+
+function moveFreeChainInOrder(modal, index, direction) {
+  if (!modal) return;
+  const order = freeChainOrderIndexes(modal);
+  const current = order.indexOf(Number(index));
+  if (current < 0) return;
+  const next = direction === "up" ? current - 1 : current + 1;
+  if (next < 0 || next >= order.length) return;
+  [order[current], order[next]] = [order[next], order[current]];
+  modal.dataset.freeChainOrder = JSON.stringify(order);
+  renderFreeChainOrder(modal);
+}
+
+
+
+
+function freeChainTextItems(value) {
+  if (Array.isArray(value)) {
+    return value.map((item) => cleanSuggestionSentence(item)).filter(Boolean);
+  }
+  const text = cleanSuggestionSentence(value);
+  return text ? [text] : [];
+}
+
+function freeChainFieldItems(chain, field) {
+  if (!chain) return [];
+  if (field === "ziele") {
+    const direct = freeChainTextItems(chain.ziel);
+    if (direct.length) return direct;
+    return supportPairsForChain(chain).map((pair) => cleanSuggestionSentence(pair.ziel)).filter(Boolean);
+  }
+  if (field === "massnahmen") {
+    const direct = freeChainTextItems(chain.massnahme);
+    if (direct.length) return direct;
+    return supportPairsForChain(chain).map((pair) => cleanSuggestionSentence(pair.massnahme)).filter(Boolean);
+  }
+  if (field === "evaluation") {
+    const direct = freeChainTextItems(chain.evaluation);
+    if (direct.length) return direct;
+    return supportPairsForChain(chain).map((pair) => cleanSuggestionSentence(pair.evaluation)).filter(Boolean);
+  }
+  return [];
+}
+
+function selectedFreeChainIndexes(modal) {
+  const row = modal?.dataset.freeChainRow || "";
+  const available = freeSelectableChainsForArea(row);
+  const checkedIndexes = [...(modal?.querySelectorAll("[data-free-chain-select]:checked") || [])]
+    .map((input) => Number(input.dataset.freeChainIndex))
+    .filter((index) => Number.isInteger(index) && available[index]);
+  const checkedSet = new Set(checkedIndexes);
+  const ordered = freeChainOrderIndexes(modal)
+    .filter((index) => checkedSet.has(index) && available[index]);
+  checkedIndexes.forEach((index) => {
+    if (!ordered.includes(index)) ordered.push(index);
+  });
+  return ordered;
+}
+
+function freeChainWizardOptions(modal, field) {
+  const row = modal?.dataset.freeChainRow || "";
+  const available = freeSelectableChainsForArea(row);
+  const indexes = selectedFreeChainIndexes(modal);
+  const options = [];
+  const seen = new Set();
+
+  indexes.forEach((chainIndex) => {
+    const chain = available[chainIndex];
+    freeChainFieldItems(chain, field).forEach((text, itemIndex) => {
+      const normalized = cleanSuggestionSentence(text);
+      if (!normalized || seen.has(normalized)) return;
+      seen.add(normalized);
+      options.push({
+        id: `${field}-${chainIndex}-${itemIndex}`,
+        chainIndex,
+        text: normalized,
+        label: freeChainOrderLabel(chain, row, chainIndex)
+      });
+    });
+  });
+  return options;
+}
+
+function freeChainWizardFieldLabel(field) {
+  if (field === "ziele") return "Förderziele";
+  if (field === "massnahmen") return "Maßnahmen";
+  return "Evaluation";
+}
+
+function freeChainWizardFieldForStep(step) {
+  if (step === 2) return "ziele";
+  if (step === 3) return "massnahmen";
+  return "evaluation";
+}
+
+function freeChainWizardStepTitle(step) {
+  if (step === 2) return "Welche Ziele passen?";
+  if (step === 3) return "Welche Maßnahmen möchtest du übernehmen?";
+  return "Wie soll die Förderung überprüft werden?";
+}
+
+function freeChainWizardSelection(modal, field) {
+  return [...(modal?.querySelectorAll(`[data-free-chain-choice="${field}"]:checked`) || [])]
+    .map((input) => input.value)
+    .filter(Boolean);
+}
+
+function freeChainWizardStoredSelections(modal) {
+  try {
+    const parsed = JSON.parse(modal?.dataset.freeChainWizardSelections || "{}");
+    return parsed && typeof parsed === "object" ? parsed : {};
+  } catch {
+    return {};
+  }
+}
+
+function storeFreeChainWizardSelection(modal, field) {
+  if (!modal || !field) return;
+  const stored = freeChainWizardStoredSelections(modal);
+  stored[field] = freeChainWizardSelection(modal, field);
+  modal.dataset.freeChainWizardSelections = JSON.stringify(stored);
+}
+
+function renderFreeChainWizardStep(modal, step) {
+  if (!modal) return;
+  const numericStep = Math.min(4, Math.max(1, Number(step) || 1));
+  modal.dataset.freeChainStep = String(numericStep);
+
+  modal.querySelectorAll("[data-free-chain-step-indicator]").forEach((indicator) => {
+    indicator.classList.toggle("active", Number(indicator.dataset.freeChainStepIndicator) === numericStep);
+    indicator.classList.toggle("done", Number(indicator.dataset.freeChainStepIndicator) < numericStep);
+  });
+
+  const stepOne = modal.querySelector("[data-free-chain-step-one]");
+  const choiceStep = modal.querySelector("[data-free-chain-choice-step]");
+  const status = modal.querySelector("[data-free-chain-status]");
+  if (status) status.textContent = "";
+
+  if (numericStep === 1) {
+    stepOne?.classList.remove("hidden");
+    choiceStep?.classList.add("hidden");
+    return;
+  }
+
+  const indexes = selectedFreeChainIndexes(modal);
+  if (!indexes.length) {
+    if (status) status.textContent = "Bitte zuerst mindestens einen Ist-Stand auswählen.";
+    renderFreeChainWizardStep(modal, 1);
+    return;
+  }
+
+  stepOne?.classList.add("hidden");
+  choiceStep?.classList.remove("hidden");
+
+  const field = freeChainWizardFieldForStep(numericStep);
+  const options = freeChainWizardOptions(modal, field);
+  const stored = new Set(freeChainWizardStoredSelections(modal)[field] || []);
+
+  const nextLabel = numericStep === 2
+    ? "Weiter zu den Maßnahmen"
+    : numericStep === 3
+      ? "Weiter zur Evaluation"
+      : "Auswahl in Förderplan übernehmen";
+
+  choiceStep.innerHTML = `
+    <section class="free-chain-choice-panel">
+      <div class="free-chain-choice-heading">
+        <span class="free-chain-choice-kicker">Schritt ${numericStep} von 4 · ${escapeHtml(freeChainWizardFieldLabel(field))}</span>
+        <h3>${escapeHtml(freeChainWizardStepTitle(numericStep))}</h3>
+        <p class="field-help">Es werden nur Vorschläge aus den zuvor ausgewählten Förderketten angeboten. Wähle nur das aus, was tatsächlich in den Förderplan soll.</p>
+      </div>
+
+      <div class="free-chain-choice-list">
+        ${options.length ? options.map((option) => `
+          <label class="free-chain-choice-item">
+            <input type="checkbox"
+              data-free-chain-choice="${escapeHtml(field)}"
+              value="${escapeHtml(option.text)}"
+              ${stored.has(option.text) ? "checked" : ""} />
+            <span>
+              <strong>${escapeHtml(option.label)}</strong>
+              <span>${escapeHtml(normalizeVisiblePlanPlaceholders(option.text))}</span>
+            </span>
+          </label>
+        `).join("") : `<p class="notice">Für die ausgewählten Förderketten sind keine passenden ${escapeHtml(freeChainWizardFieldLabel(field))} hinterlegt.</p>`}
+      </div>
+
+      <div class="actions">
+        <button class="secondary-button" type="button" data-action="free-chain-prev-step" data-free-chain-prev="${numericStep - 1}">Zurück</button>
+        ${numericStep < 4
+          ? `<button class="primary" type="button" data-action="free-chain-next-step" data-free-chain-next="${numericStep + 1}">${escapeHtml(nextLabel)}</button>`
+          : `<button class="primary" type="button" data-action="apply-free-chain-selection" data-free-chain-row="${escapeHtml(modal.dataset.freeChainRow || "")}">${escapeHtml(nextLabel)}</button>`}
+        <button class="secondary-button" type="button" data-action="close-free-chain-modal">Abbrechen</button>
+      </div>
+    </section>`;
+}
+
+function validateFreeChainWizardStep(modal, currentStep) {
+  const status = modal?.querySelector("[data-free-chain-status]");
+  if (currentStep === 1) {
+    if (!selectedFreeChainIndexes(modal).length) {
+      if (status) status.textContent = "Bitte mindestens einen Ist-Stand auswählen.";
+      return false;
+    }
+    return true;
+  }
+  const field = freeChainWizardFieldForStep(currentStep);
+  storeFreeChainWizardSelection(modal, field);
+  const chosen = freeChainWizardStoredSelections(modal)[field] || [];
+  if (!chosen.length) {
+    if (status) status.textContent = `Bitte mindestens einen Eintrag für ${freeChainWizardFieldLabel(field)} auswählen.`;
+    return false;
+  }
+  return true;
+}
+
+function formatFreeChainGoals(items = []) {
+  const goals = removeExactRepeatedSentences(
+    (items || []).map((item) => cleanSuggestionSentence(item)).filter(Boolean)
+  );
+  return goals.map((goal, index) => {
+    if (index === 0) return bulletSuggestion(goal);
+    const action = goalSentenceToAction(goal);
+    return action
+      ? `- ${capitalizeListItemText(action)}`
+      : bulletSuggestion(goal);
+  }).join("\n");
+}
+
+function applyFreeChainSelection(row, modal) {
+  const available = freeSelectableChainsForArea(row);
+  const indexes = selectedFreeChainIndexes(modal);
+  const status = modal?.querySelector("[data-free-chain-status]");
+
+  if (!indexes.length) {
+    if (status) status.textContent = "Bitte mindestens einen Ist-Stand auswählen.";
+    return;
+  }
+
+  // Letzte Auswahl (Evaluation) vor dem Übernehmen sichern.
+  storeFreeChainWizardSelection(modal, "evaluation");
+  const stored = freeChainWizardStoredSelections(modal);
+  const goals = Array.isArray(stored.ziele) ? stored.ziele.filter(Boolean) : [];
+  const measures = Array.isArray(stored.massnahmen) ? stored.massnahmen.filter(Boolean) : [];
+  const evaluations = Array.isArray(stored.evaluation) ? stored.evaluation.filter(Boolean) : [];
+
+  if (!goals.length || !measures.length || !evaluations.length) {
+    if (status) status.textContent = "Bitte in allen vier Schritten mindestens eine Auswahl treffen.";
+    return;
+  }
+
+  const selectedChains = applyComposerVariants(indexes.map((index) => available[index]), 0);
   const next = {
-    istStand: removeRepeatedSentences(selected.map((chain) => cleanSuggestionSentence(chain.istStand)).filter(Boolean)).join(" "),
-    ziele: formatComposerItems(selected.map((chain) => chain.ziel).filter(Boolean), "list", selected.length),
-    massnahmen: formatComposerItems(selected.map((chain) => chain.massnahme).filter(Boolean), "list", selected.length),
-    evaluation: formatComposerItems(selected.map((chain) => chain.evaluation).filter(Boolean), "list", selected.length)
+    istStand: groupedIstStandFromChains(row, selectedChains),
+    ziele: formatFreeChainGoals(goals),
+    massnahmen: formatComposerItems(measures, "list", measures.length),
+    evaluation: formatComposerItems(evaluations, "list", evaluations.length)
   };
+
   if (!plan.rasterTexts[row]) plan.rasterTexts[row] = emptyRasterRow();
   const existing = plan.rasterTexts[row];
   const hasExisting = columns.some((column) => String(existing[column.key] || "").trim());
-  if (hasExisting && !window.confirm("In diesem Förderbereich steht bereits Text. Soll die freie Förderketten-Auswahl die vorhandenen vier Felder ersetzen?")) return;
+  if (hasExisting && !window.confirm("In diesem Förderbereich steht bereits Text. Soll die neue schrittweise Auswahl die vorhandenen vier Felder ersetzen?")) return;
+
   columns.forEach((column) => {
     plan.rasterTexts[row][column.key] = next[column.key] || "";
   });
+
   touchPlan();
   scheduleAutosave();
   closeFreeChainModal();
@@ -17627,7 +18585,7 @@ function openTextSource(row, columnKey, source) {
     return;
   }
   if (source === "chains") {
-    openFreeChainModal(row);
+    renderFreeChainModal(row);
     return;
   }
   if (source === "fixed") {
@@ -18349,17 +19307,7 @@ function pilotActiveTopicsForGroup(area, group) {
   ].filter(Boolean))];
 }
 
-const speechPilotIstStandTopicOrder = [
-  "Aussprache / Artikulation",
-  "Lautwahrnehmung / phonologische Bewusstheit",
-  "Wortschatz / Wortbedeutung",
-  "Sprachverständnis / Arbeitsaufträge",
-  "Grammatik / Satzbildung",
-  "Erzählfähigkeit / Versprachlichen",
-  "Kommunikation / Gesprächsverhalten",
-  "Stimme / Sprechweise",
-  "Redefluss / Wortfindung"
-];
+const speechPilotIstStandTopicOrder = speechCompetenceTopicsInProfessionalOrder();
 
 const speechPilotIstStandHeadings = {
   "Aussprache / Artikulation": {
@@ -18840,37 +19788,76 @@ function composeSpeechSelectedIstStandModules(selectedItems = []) {
     || composeBundledIstStandModules(entries);
 }
 
+
+function cognitionSelectedObservationSentences(entries = [], modules = [], limit = 6) {
+  const candidates = [];
+  (entries || []).forEach((entry) => {
+    const details = normalizeCompetenceObservationEntry(entry.observationDetails);
+    (details.selected || []).forEach((text) => candidates.push(text));
+    if (details.custom) candidates.push(details.custom);
+    if (entry.customObservation) candidates.push(entry.customObservation);
+  });
+  (modules || []).forEach((module) => {
+    const normalized = normalizeTextModuleEntry(module);
+    if (normalized.text) candidates.push(normalized.text);
+  });
+  return removeRepeatedSentences(
+    candidates
+      .map((text) => cleanSuggestionSentence(text))
+      .filter(Boolean)
+  ).slice(0, limit);
+}
+
+function variedCognitionObservationSentence(sentence = "", index = 0) {
+  const cleaned = cleanSuggestionSentence(sentence);
+  if (!cleaned) return "";
+  if (index === 0) return cleaned;
+  return selectedModuleFollowUpSentence(cleaned, index);
+}
+
 function composeCognitionPilotIstStand(entries = [], modules = []) {
   const groups = activePilotGroups("Kognition", entries, modules, cognitionPilotIstStandGroups);
   if (!groups.length) return "";
   const keys = new Set(groups.map((group) => group.key));
   const cognitionFocuses = [];
   if (keys.has("memory")) cognitionFocuses.push("beim Aufnehmen und Behalten von Lerninhalten");
-  if (keys.has("transfer")) cognitionFocuses.push("beim Übertragen von Lerninhalten");
-  if (!cognitionFocuses.length && keys.has("strategies")) cognitionFocuses.push("bei der Auswahl von Strategien und beim Problemlösen");
-  if (!cognitionFocuses.length && keys.has("symbols")) cognitionFocuses.push("beim Verknüpfen von Symbolen und Ordnungssystemen mit ihrer Bedeutung");
-  const sentences = [groups.length > 1 && (keys.has("memory") || keys.has("transfer"))
-    ? "Im Bereich Kognition benötigt _ Unterstützung beim Aufnehmen, Behalten und Übertragen von Lerninhalten."
-    : pilotIntroSentence("Kognition", cognitionFocuses)];
+  if (keys.has("strategies")) cognitionFocuses.push("bei der Auswahl und Nutzung von Strategien");
+  if (keys.has("transfer")) cognitionFocuses.push("beim Anwenden von Gelerntem in neuen Situationen");
+  if (keys.has("symbols")) cognitionFocuses.push("beim Verknüpfen von Symbolen und Ordnungssystemen mit ihrer Bedeutung");
 
+  const intro = pilotIntroSentence("Kognition", cognitionFocuses)
+    || "Im Bereich Kognition zeigt sich Unterstützungsbedarf bei mehreren miteinander verbundenen Lernanforderungen.";
+
+  const selectedObservations = cognitionSelectedObservationSentences(entries, modules, 6)
+    .map((sentence, index) => variedCognitionObservationSentence(sentence, index))
+    .filter(Boolean);
+
+  const fallback = [];
   if (keys.has("memory")) {
-    sentences.push("Kurze Aufträge und neue Inhalte gelingen sicherer, wenn sie visualisiert und in klare Schritte gegliedert werden.");
+    fallback.push("Kurze Aufträge und neue Inhalte gelingen sicherer, wenn sie visualisiert und in klare Schritte gegliedert werden.");
     const memoryGroup = groups.find((group) => group.key === "memory");
     const activeMemoryTopics = pilotActiveTopicsForGroup("Kognition", memoryGroup || {});
     if (activeMemoryTopics.includes("Langfristiges Behalten / Abruf")) {
-      sentences.push("Geübte Informationen werden nach mehreren Tagen noch nicht durchgängig sicher abgerufen.");
+      fallback.push("Geübte Informationen werden nach mehreren Tagen noch nicht durchgängig sicher abgerufen.");
     }
   }
   if (keys.has("strategies")) {
-    sentences.push("Bei neuen oder mehrschrittigen Aufgaben braucht #er/sie# Orientierung, um passende Strategien auszuwählen und Lösungswege zu entwickeln.");
+    fallback.push("Bei neuen oder mehrschrittigen Aufgaben braucht #er/sie# Orientierung, um passende Strategien auszuwählen und Lösungswege zu entwickeln.");
   }
   if (keys.has("transfer")) {
-    sentences.push("Das Übertragen bekannter Inhalte auf veränderte Aufgaben und das Erkennen von Zusammenhängen gelingen mit Unterstützung.");
+    fallback.push("Die Anwendung bekannter Inhalte in veränderten Aufgaben und das Erkennen von Zusammenhängen gelingen mit Unterstützung.");
   }
   if (keys.has("symbols")) {
-    sentences.push("Symbole, Zeichen, Piktogramme oder Ordnungssysteme müssen weiter gezielt mit ihrer Bedeutung verknüpft werden.");
+    fallback.push("Symbole, Zeichen, Piktogramme oder Ordnungssysteme müssen weiter gezielt mit ihrer Bedeutung verknüpft werden.");
   }
-  return finalizeClearIstStandText(removeRepeatedSentences(sentences.filter(Boolean)).join(" "));
+
+  const detailSentences = selectedObservations.length
+    ? selectedObservations
+    : fallback;
+
+  return finalizeClearIstStandText(
+    removeRepeatedSentences([intro, ...detailSentences].filter(Boolean)).join(" ")
+  );
 }
 
 const learningPilotIstStandSections = {
@@ -19984,7 +20971,7 @@ function learningEntriesForTopics(entries = [], topics = []) {
     return byTopic.get(canonicalTopic) || {
       area: "Lern- und Leistungsverhalten",
       topic: canonicalTopic,
-      rating: "teilweise unsicher",
+      rating: "Förderbedarf",
       index
     };
   }).filter((entry) => entry.topic);
@@ -29676,8 +30663,9 @@ function updateAgreement(key, value) {
 
 function updateCompetenceRating(area, topic, rating) {
   if (!plan.competenceRatings[area]) plan.competenceRatings[area] = {};
-  if (competenceRatingOptions.includes(rating)) {
-    plan.competenceRatings[area][topic] = rating;
+  const normalizedRating = normalizeCompetenceRatingValue(rating);
+  if (competenceRatingOptions.includes(normalizedRating)) {
+    plan.competenceRatings[area][topic] = normalizedRating;
   } else {
     delete plan.competenceRatings[area][topic];
     if (!Object.keys(plan.competenceRatings[area]).length) delete plan.competenceRatings[area];
@@ -29970,8 +30958,9 @@ function syncVisibleInputs() {
     const topic = group.dataset.competenceTopic;
     const active = group.querySelector('[data-competence-rating][aria-pressed="true"]');
     if (!plan.competenceRatings[area]) plan.competenceRatings[area] = {};
-    if (active && competenceRatingOptions.includes(active.dataset.competenceRating)) {
-      plan.competenceRatings[area][topic] = active.dataset.competenceRating;
+    const normalizedRating = normalizeCompetenceRatingValue(active?.dataset.competenceRating || "");
+    if (active && competenceRatingOptions.includes(normalizedRating)) {
+      plan.competenceRatings[area][topic] = normalizedRating;
     }
     else delete plan.competenceRatings[area][topic];
     if (!Object.keys(plan.competenceRatings[area]).length) delete plan.competenceRatings[area];
@@ -30163,7 +31152,7 @@ function normalizeCompetenceRatings(value) {
   rasterRows.forEach((area) => {
     Object.entries(value?.[area] || {}).forEach(([topic, rating]) => {
       const canonicalTopics = canonicalCompetenceTopics(area, topic);
-      const normalizedRating = rating === "Förderbedarf" ? "unsicher" : rating;
+      const normalizedRating = normalizeCompetenceRatingValue(rating);
       if (!competenceRatingOptions.includes(normalizedRating)) return;
       canonicalTopics.forEach((canonicalTopic) => {
         if (!canonicalTopic) return;
@@ -30216,7 +31205,7 @@ function mergeCompetenceRating(existingRating, incomingRating) {
   const priority = {
     "nicht einschätzbar": 1,
     "gesichert": 2,
-    "teilweise unsicher": 3,
+    "Förderbedarf": 3,
     "unsicher": 4
   };
   return (priority[incomingRating] || 0) > (priority[existingRating] || 0) ? incomingRating : existingRating;
@@ -30468,7 +31457,7 @@ function qualityObservationResults() {
   rasterRows.forEach((area) => {
     const ratings = plan.competenceRatings?.[area] || {};
     Object.entries(ratings).forEach(([topic, rating]) => {
-      if (!["teilweise unsicher", "unsicher"].includes(rating)) return;
+      if (!["Förderbedarf", "unsicher"].includes(rating)) return;
       const observationOptions = competenceObservationOptionsFor(area, topic);
       if (!observationOptions.length) return;
       const observation = normalizeCompetenceObservationEntry(plan.competenceObservations?.[area]?.[topic]);
@@ -30895,7 +31884,7 @@ function renderBlankCompetenceRasterPrintDocument(temporaryIdentity = {}) {
               <tr>
                 <th>Kompetenz</th>
                 <th>gesichert</th>
-                <th>teilweise unsicher</th>
+                <th>teilweise</th>
                 <th>unsicher</th>
                 <th>nicht einschätzbar</th>
                 <th>Beobachtung / Notiz</th>
@@ -33499,17 +34488,18 @@ window.addEventListener("resize", updateFloatingScrollTopButton);
 document.addEventListener("input", (event) => {
   const search = event.target.closest?.("[data-free-chain-search]");
   if (!search) return;
-  const modal = search.closest("#free-chain-modal");
-  const query = String(search.value || "").trim().toLocaleLowerCase("de-DE");
-  modal?.querySelectorAll("[data-free-chain-item]").forEach((item) => {
-    item.classList.toggle("hidden", Boolean(query) && !String(item.dataset.freeChainSearchtext || "").includes(query));
-  });
+  applyFreeChainFilters(search.closest("#free-chain-modal"));
 });
 
 document.addEventListener("change", (event) => {
+  const groupFilter = event.target.closest?.("[data-free-chain-group-filter]");
+  if (groupFilter) {
+    applyFreeChainFilters(groupFilter.closest("#free-chain-modal"));
+    return;
+  }
   const input = event.target.closest?.("[data-free-chain-select]");
   if (!input) return;
-  updateFreeChainSelectionCount(input.closest("#free-chain-modal"));
+  syncFreeChainSelectionOrder(input.closest("#free-chain-modal"), input);
 });
 
 document.addEventListener("click", (event) => {
@@ -33582,6 +34572,14 @@ app.addEventListener("click", (event) => {
     workModeReturnStep = "";
     statusMessage = "";
     setStep("basic");
+  }
+  if (action === "toggle-workspace-sidebar") {
+    workspaceSidebarCollapsed = !workspaceSidebarCollapsed;
+    try {
+      localStorage.setItem(WORKSPACE_SIDEBAR_KEY, workspaceSidebarCollapsed ? "true" : "false");
+    } catch {}
+    render();
+    return;
   }
   if (action === "start") {
     if (["basic", "workMode", "competence", "raster", "agreements", "quality", "print", "storage"].includes(currentStep)) {
@@ -33871,7 +34869,33 @@ app.addEventListener("click", (event) => {
   if (action === "clear-free-chain-selection") {
     const modal = button.closest("#free-chain-modal");
     modal?.querySelectorAll("[data-free-chain-select]").forEach((input) => { input.checked = false; });
+    if (modal) modal.dataset.freeChainOrder = "[]";
     updateFreeChainSelectionCount(modal);
+    renderFreeChainOrder(modal);
+  }
+  if (action === "move-free-chain-up" || action === "move-free-chain-down") {
+    const modal = button.closest("#free-chain-modal");
+    moveFreeChainInOrder(
+      modal,
+      Number(button.dataset.freeChainIndex),
+      action === "move-free-chain-up" ? "up" : "down"
+    );
+  }
+  if (action === "free-chain-next-step") {
+    const modal = button.closest("#free-chain-modal");
+    const currentStep = Number(modal?.dataset.freeChainStep || 1);
+    if (validateFreeChainWizardStep(modal, currentStep)) {
+      renderFreeChainWizardStep(modal, Number(button.dataset.freeChainNext || currentStep + 1));
+    }
+  }
+  if (action === "free-chain-prev-step") {
+    const modal = button.closest("#free-chain-modal");
+    const currentStep = Number(modal?.dataset.freeChainStep || 1);
+    if (currentStep > 1) {
+      const field = freeChainWizardFieldForStep(currentStep);
+      storeFreeChainWizardSelection(modal, field);
+    }
+    renderFreeChainWizardStep(modal, Number(button.dataset.freeChainPrev || currentStep - 1));
   }
   if (action === "apply-free-chain-selection") {
     const modal = button.closest("#free-chain-modal");

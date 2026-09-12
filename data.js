@@ -56,9 +56,8 @@ window.FOERDERPLAN_DATA = (() => {
   ];
 
   const quickStatusOptions = [
-    { value: "secured", label: "altersgemäß gesichert / aktuell kein Förderschwerpunkt" },
-    { value: "observe", label: "teilweise unsicher / beobachten" },
-    { value: "need", label: "deutlicher Förderbedarf" },
+    { value: "secured", label: "sicher / aktuell kein Förderbedarf" },
+    { value: "need", label: "Förderbedarf" },
     { value: "unknown", label: "noch nicht einschätzbar" },
     { value: "details", label: "Details prüfen" }
   ];
@@ -3386,7 +3385,7 @@ window.FOERDERPLAN_DATA = (() => {
       "bereich": "Kognition",
       "rasterRow": "cognition",
       "rasterRowLabel": "Kognition",
-      "title": "Übertragung von Wissen",
+      "title": "Transfer / Anwendung in neuen Situationen",
       "tags": [
         "kognition",
         "uebertragung",
@@ -3395,7 +3394,7 @@ window.FOERDERPLAN_DATA = (() => {
         "transfer"
       ],
       "quickAreas": [
-        "Übertragung von Wissen"
+        "Transfer / Anwendung in neuen Situationen"
       ],
       "istStand": "_ wendet geübte Inhalte in neuen Aufgabenformaten noch nicht sicher an.",
       "ziele": [

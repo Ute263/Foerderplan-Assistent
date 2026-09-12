@@ -34,4 +34,4 @@ Die frühere Bibliothek einzelner vorgefertigter Textbausteine (`textModules.js`
 
 ## Förderketten und manuelle Bausteine
 
-Die automatische Förderplanung verwendet ausschließlich die hinterlegten Förderketten bzw. den Endkatalog. Die Datei `textModules.js` ist als **manuelle Bausteinbibliothek** eingebunden: Über „Einzelne Bausteine frei auswählen“ können Formulierungen gezielt ausgewählt, angepasst und übernommen werden. Diese Einzelbausteine dienen **nicht** als automatischer Fallback für fehlende Förderketten und werden nicht automatisch mit Ketten vermischt.
+Die automatische Förderplanung verwendet ausschließlich die hinterlegten Förderketten bzw. den Endkatalog. Die Datei `textModules.js` bleibt als interne manuelle Bausteinbibliothek erhalten, ist aber nicht mehr als eigene Arbeitsweise „Einzelne Bausteine frei auswählen“ sichtbar. Einzelbausteine werden nicht automatisch mit Förderketten vermischt.

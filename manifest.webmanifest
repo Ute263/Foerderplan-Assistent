@@ -1,13 +1,13 @@
 {
   "name": "FörderKompass",
   "short_name": "FörderKompass",
-  "description": "Werkzeug für strukturierte Förderpläne",
+  "description": "Individuell. Strukturiert. Wirksam. – Werkzeug für Förderpläne",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
   "orientation": "any",
-  "theme_color": "#2f6f55",
-  "background_color": "#f5f3ee",
+  "theme_color": "#4f86ad",
+  "background_color": "#f6f9fc",
   "icons": [
     {
       "src": "icon-192.png",

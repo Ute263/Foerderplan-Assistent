@@ -7827,3 +7827,2274 @@ body:has(.start-layout) .draft-mini-card .quiet-button:focus-visible {
     break-inside: avoid;
   }
 }
+
+
+/* v309 – vollständige Förderkette direkt in der Auswahl */
+.free-chain-full-card{
+  align-items:flex-start;
+  padding:.9rem 1rem;
+}
+.free-chain-full-card > input{
+  margin-top:.25rem;
+  flex:0 0 auto;
+}
+.free-chain-full-content{
+  min-width:0;
+  display:grid;
+  gap:.35rem;
+}
+.free-chain-title{
+  font-size:1rem;
+  line-height:1.3;
+}
+.free-chain-group{
+  display:block;
+  font-size:.84rem;
+  font-weight:650;
+  opacity:.68;
+  margin-bottom:.2rem;
+}
+.free-chain-full-content p{
+  margin:.08rem 0;
+  line-height:1.45;
+}
+.free-chain-full-card:has(input:checked){
+  outline:2px solid rgba(47,111,85,.28);
+  background:rgba(235,247,242,.72);
+}
+@media print{
+  #free-chain-modal{display:none!important}
+}
+
+
+/* v310 – Förderketten nach Kompetenz-/Entwicklungsbereich gliedern */
+.free-chain-filter-grid{
+  display:grid;
+  grid-template-columns:minmax(220px, .9fr) minmax(260px, 1.1fr);
+  gap:.8rem;
+  align-items:end;
+}
+.free-chain-visible-count{
+  margin-top:-.25rem;
+}
+@media (max-width:760px){
+  .free-chain-filter-grid{grid-template-columns:1fr}
+}
+@media print{
+  .free-chain-filter-grid,.free-chain-visible-count{display:none!important}
+}
+
+
+/* v311 – Sprache: 9 Entwicklungsbereiche / 36 vorhandene Förderketten */
+.free-chain-full-content .free-chain-group:empty{display:none}
+
+
+/* v315 – Reihenfolge ausgewählter Förderketten */
+.free-chain-order-panel {
+  margin: 0.75rem 0 1rem;
+  padding: 0.85rem 0.95rem;
+  border: 1px solid var(--line, #d7dde3);
+  border-radius: 12px;
+  background: var(--panel, #fff);
+}
+
+.free-chain-order-header p {
+  margin: 0.25rem 0 0.65rem;
+}
+
+.free-chain-order-item {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 0.55rem;
+  align-items: center;
+  padding: 0.5rem 0;
+  border-top: 1px solid var(--line, #e1e5e9);
+}
+
+.free-chain-order-item:first-child {
+  border-top: 0;
+}
+
+.free-chain-order-number {
+  min-width: 1.6rem;
+  font-weight: 700;
+}
+
+.free-chain-order-label {
+  line-height: 1.35;
+}
+
+.free-chain-order-actions {
+  display: flex;
+  gap: 0.3rem;
+}
+
+.free-chain-order-actions button {
+  min-width: 2.2rem;
+  padding: 0.32rem 0.5rem;
+  font-size: 1rem;
+}
+
+
+/* v316 – Förderketten als geführte 4-Schritt-Auswahl */
+.free-chain-stepper {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.45rem;
+  margin: 0.75rem 0 1rem;
+}
+
+.free-chain-stepper span {
+  padding: 0.55rem 0.45rem;
+  border: 1px solid var(--line, #d9dee5);
+  border-radius: 10px;
+  text-align: center;
+  font-size: 0.9rem;
+  background: var(--panel, #fff);
+  opacity: 0.68;
+}
+
+.free-chain-stepper span.active {
+  font-weight: 700;
+  opacity: 1;
+  border-width: 2px;
+}
+
+.free-chain-stepper span.done {
+  opacity: 1;
+}
+
+.free-chain-choice-panel {
+  padding: 0.3rem 0;
+}
+
+.free-chain-choice-heading h3 {
+  margin: 0.15rem 0 0.3rem;
+}
+
+.free-chain-choice-kicker {
+  display: inline-block;
+  font-size: 0.85rem;
+  font-weight: 700;
+  margin-bottom: 0.15rem;
+}
+
+.free-chain-choice-list {
+  display: grid;
+  gap: 0.65rem;
+  margin: 0.9rem 0 1rem;
+}
+
+.free-chain-choice-item {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 0.75rem;
+  align-items: start;
+  padding: 0.8rem 0.9rem;
+  border: 1px solid var(--line, #d9dee5);
+  border-radius: 12px;
+  background: var(--panel, #fff);
+  cursor: pointer;
+}
+
+.free-chain-choice-item input {
+  margin-top: 0.18rem;
+}
+
+.free-chain-choice-item > span {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.free-chain-choice-item > span > strong {
+  font-size: 0.85rem;
+}
+
+@media (max-width: 760px) {
+  .free-chain-stepper {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+
+/* v317 – Formulierungsübernahme direkt an der Reihenfolge */
+.free-chain-order-text {
+  display: grid;
+  gap: 0.2rem;
+  min-width: 0;
+}
+
+.free-chain-order-formulation {
+  display: block;
+  font-size: 0.9rem;
+  line-height: 1.4;
+  opacity: 0.82;
+}
+
+.free-chain-order-actions-main {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--line, #e1e5e9);
+}
+
+.free-chain-order-actions-main .primary {
+  width: auto;
+}
+
+.free-chain-bottom-actions {
+  justify-content: flex-end;
+}
+
+
+/* v319 – fachliche Gliederung Sprache / Kommunikation */
+.speech-competence-group {
+  margin: 0 0 1rem;
+  padding: 0.8rem 0.9rem 0.9rem;
+  border: 1px solid var(--line, #d9dee5);
+  border-radius: 12px;
+}
+
+.speech-competence-group > h4 {
+  margin: 0 0 0.7rem;
+  font-size: 1rem;
+}
+
+.speech-competence-group-topics {
+  display: grid;
+  gap: 0.65rem;
+}
+
+
+/* v320 – fachliche Untergliederung aller Förderbereiche */
+.professional-competence-group {
+  margin: 0 0 1rem;
+  padding: 0.8rem 0.9rem 0.9rem;
+  border: 1px solid var(--line, #d9dee5);
+  border-radius: 12px;
+}
+
+.professional-competence-group > h4 {
+  margin: 0 0 0.7rem;
+  font-size: 1rem;
+}
+
+.professional-competence-group-topics {
+  display: grid;
+  gap: 0.65rem;
+}
+
+
+/* ==========================================================
+   v324 – neue Arbeitsoberfläche
+   Ruhige, helle Einspalten-Arbeitsfläche mit einklappbarer
+   Seitennavigation. Das Drucklayout bleibt unberührt.
+   ========================================================== */
+
+:root {
+  --ui-bg: #f4f7fb;
+  --ui-panel: #ffffff;
+  --ui-panel-soft: #f8fafc;
+  --ui-border: #e3e9f1;
+  --ui-border-strong: #d4deea;
+  --ui-text: #13233f;
+  --ui-muted: #6f7d93;
+  --ui-blue: #2f67a5;
+  --ui-blue-soft: #edf4fc;
+  --ui-teal: #5d9e98;
+  --ui-teal-soft: #eef8f6;
+  --ui-green: #4d936c;
+  --ui-green-soft: #eff8f2;
+  --ui-orange: #bd7a42;
+  --ui-orange-soft: #fff4e9;
+  --ui-purple: #7b67b2;
+  --ui-purple-soft: #f4f0fb;
+  --ui-shadow: 0 10px 30px rgba(43, 63, 91, 0.075);
+  --ui-shadow-soft: 0 4px 14px rgba(43, 63, 91, 0.055);
+  --workspace-sidebar-width: 238px;
+  --workspace-sidebar-collapsed: 72px;
+}
+
+@media screen {
+  body:not(:has(.start-layout)) {
+    background:
+      radial-gradient(circle at 80% -5%, rgba(214, 228, 247, 0.62), transparent 28%),
+      linear-gradient(180deg, #f7f9fc 0%, var(--ui-bg) 100%);
+    color: var(--ui-text);
+  }
+
+  body:not(:has(.start-layout)) .app-shell {
+    width: 100%;
+    max-width: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  body:not(:has(.start-layout)) .page-shell {
+    min-height: 100vh;
+    padding:
+      104px
+      clamp(24px, 4vw, 64px)
+      110px
+      calc(var(--workspace-sidebar-width) + clamp(24px, 4vw, 64px));
+    transition: padding-left 180ms ease;
+  }
+
+  body:not(:has(.start-layout)):has(.workspace-sidebar.is-collapsed) .page-shell {
+    padding-left: calc(var(--workspace-sidebar-collapsed) + clamp(24px, 4vw, 64px));
+  }
+
+  body:not(:has(.start-layout)) .page-shell > .stack,
+  body:not(:has(.start-layout)) .page-shell > .section-title,
+  body:not(:has(.start-layout)) .page-shell > .card,
+  body:not(:has(.start-layout)) .page-shell > .quality-overview,
+  body:not(:has(.start-layout)) .page-shell > .print-output-panel,
+  body:not(:has(.start-layout)) .page-shell > .print-preview {
+    width: min(1180px, 100%);
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  /* Seitennavigation */
+  .workspace-sidebar {
+    position: fixed;
+    inset: 0 auto 0 0;
+    z-index: 80;
+    width: var(--workspace-sidebar-width);
+    display: flex;
+    flex-direction: column;
+    padding: 20px 14px 18px;
+    background: rgba(248, 251, 255, 0.94);
+    border-right: 1px solid var(--ui-border);
+    box-shadow: 6px 0 24px rgba(46, 65, 91, 0.035);
+    backdrop-filter: blur(18px);
+    transition: width 180ms ease;
+  }
+
+  .workspace-sidebar.is-collapsed {
+    width: var(--workspace-sidebar-collapsed);
+    padding-left: 10px;
+    padding-right: 10px;
+  }
+
+  .workspace-brand {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    min-height: 50px;
+    padding: 3px 7px 17px;
+    border-bottom: 1px solid var(--ui-border);
+    overflow: hidden;
+  }
+
+  .workspace-brand img {
+    width: 38px;
+    height: 38px;
+    flex: 0 0 38px;
+  }
+
+  .workspace-brand-text {
+    display: grid;
+    min-width: 145px;
+    line-height: 1.15;
+  }
+
+  .workspace-brand-text strong {
+    color: #17325a;
+    font-size: 1.05rem;
+    font-weight: 780;
+  }
+
+  .workspace-brand-text span {
+    margin-top: 4px;
+    color: var(--ui-muted);
+    font-size: .72rem;
+  }
+
+  .workspace-sidebar.is-collapsed .workspace-brand-text,
+  .workspace-sidebar.is-collapsed .workspace-nav-label {
+    opacity: 0;
+    width: 0;
+    overflow: hidden;
+    pointer-events: none;
+  }
+
+  .workspace-sidebar-toggle {
+    position: absolute;
+    top: 65px;
+    right: -14px;
+    width: 28px;
+    min-width: 28px;
+    height: 28px;
+    min-height: 28px;
+    padding: 0;
+    border: 1px solid var(--ui-border-strong);
+    border-radius: 50%;
+    background: #fff;
+    color: #53657d;
+    box-shadow: var(--ui-shadow-soft);
+    font-size: 1.25rem;
+    line-height: 1;
+  }
+
+  .workspace-nav {
+    display: grid;
+    gap: 5px;
+    margin-top: 22px;
+  }
+
+  .workspace-nav-item {
+    width: 100%;
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    border: 0;
+    border-radius: 11px;
+    background: transparent;
+    color: #42536c;
+    padding: 10px 12px;
+    text-align: left;
+    box-shadow: none;
+    white-space: nowrap;
+    overflow: hidden;
+  }
+
+  .workspace-nav-item:hover,
+  .workspace-nav-item:focus-visible {
+    border: 0;
+    background: #edf3fa;
+    color: #224f83;
+  }
+
+  .workspace-nav-item.is-active {
+    background: #e6f0fb;
+    color: #1f568f;
+    font-weight: 700;
+  }
+
+  .workspace-nav-icon {
+    width: 24px;
+    min-width: 24px;
+    text-align: center;
+    font-size: 1.05rem;
+  }
+
+  .workspace-sidebar-bottom {
+    display: grid;
+    gap: 5px;
+    margin-top: auto;
+    padding-top: 14px;
+    border-top: 1px solid var(--ui-border);
+  }
+
+  /* Oberer Arbeitskopf */
+  .workspace-topbar {
+    position: fixed;
+    inset: 0 0 auto var(--workspace-sidebar-width);
+    z-index: 70;
+    min-height: 82px;
+    display: grid;
+    grid-template-columns: minmax(150px, .75fr) minmax(430px, 1.8fr) minmax(160px, .75fr);
+    align-items: center;
+    gap: 20px;
+    padding: 13px clamp(24px, 4vw, 64px);
+    background: rgba(255,255,255,.91);
+    border-bottom: 1px solid var(--ui-border);
+    backdrop-filter: blur(18px);
+    transition: left 180ms ease;
+  }
+
+  body:has(.workspace-sidebar.is-collapsed) .workspace-topbar {
+    left: var(--workspace-sidebar-collapsed);
+  }
+
+  .workspace-page-brand {
+    display: grid;
+    line-height: 1.15;
+  }
+
+  .workspace-page-brand strong {
+    color: #17325a;
+    font-size: 1.05rem;
+    font-weight: 760;
+  }
+
+  .workspace-page-brand span {
+    margin-top: 4px;
+    color: var(--ui-muted);
+    font-size: .78rem;
+  }
+
+  .workspace-top-actions {
+    display: flex;
+    justify-content: flex-end;
+  }
+
+  /* Vier Phasen statt langer technischer Schrittleiste */
+  .progress-phases {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0;
+    min-width: 0;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .progress-phases .progress-phase {
+    min-height: 40px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    border: 0 !important;
+    background: transparent !important;
+    padding: 5px 7px;
+    color: #8895a8;
+    box-shadow: none !important;
+    white-space: nowrap;
+  }
+
+  .progress-phases .progress-phase:hover,
+  .progress-phases .progress-phase:focus-visible {
+    color: #315f91;
+  }
+
+  .progress-phase-number {
+    width: 28px;
+    height: 28px;
+    display: inline-grid;
+    place-items: center;
+    border-radius: 50%;
+    border: 1px solid #d7e0ec;
+    background: #f2f5f9;
+    color: #8390a3;
+    font-size: .78rem;
+    font-weight: 700;
+  }
+
+  .progress-phase.active {
+    color: #173b69;
+    font-weight: 720;
+  }
+
+  .progress-phase.active .progress-phase-number {
+    border-color: #2f67a5;
+    background: #2f67a5;
+    color: #fff;
+    box-shadow: 0 0 0 4px rgba(47,103,165,.09);
+  }
+
+  .progress-phase.is-complete {
+    color: #527b78;
+  }
+
+  .progress-phase.is-complete .progress-phase-number {
+    border-color: #77aaa4;
+    background: #77aaa4;
+    color: #fff;
+  }
+
+  .progress-phase-line {
+    width: clamp(22px, 3vw, 66px);
+    height: 1px;
+    background: #dce4ef;
+  }
+
+  /* Seitenüberschriften */
+  body:not(:has(.start-layout)) .section-title {
+    margin-bottom: 18px;
+  }
+
+  body:not(:has(.start-layout)) .section-title h2 {
+    margin: 0;
+    color: #122846;
+    font-size: clamp(1.65rem, 2.2vw, 2.15rem);
+    letter-spacing: -.025em;
+    font-weight: 760;
+  }
+
+  body:not(:has(.start-layout)) .section-title .hint {
+    margin-top: 4px;
+    color: var(--ui-muted);
+    font-size: .96rem;
+  }
+
+  /* Übersichtskarten */
+  body:not(:has(.start-layout)) .competence-overview-list,
+  body:not(:has(.start-layout)) .raster-overview-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 13px;
+  }
+
+  body:not(:has(.start-layout)) .competence-overview-card,
+  body:not(:has(.start-layout)) .raster-overview-card {
+    min-height: 72px;
+    border: 1px solid var(--ui-border);
+    border-radius: 15px;
+    background: rgba(255,255,255,.94);
+    color: #243b5d;
+    padding: 16px 18px;
+    box-shadow: var(--ui-shadow-soft);
+  }
+
+  body:not(:has(.start-layout)) .competence-overview-card:hover,
+  body:not(:has(.start-layout)) .raster-overview-card:hover {
+    border-color: #bed0e4;
+    background: #fbfdff;
+    transform: translateY(-1px);
+    box-shadow: var(--ui-shadow);
+  }
+
+  /* Kompetenzdetail: viel Platz, keine rechte Vorschau */
+  body:not(:has(.start-layout)) .competence-single-view,
+  body:not(:has(.start-layout)) .raster-single-view {
+    border: 1px solid var(--ui-border);
+    border-radius: 18px;
+    background: rgba(255,255,255,.96);
+    box-shadow: var(--ui-shadow);
+    overflow: hidden;
+  }
+
+  body:not(:has(.start-layout)) .competence-area-header,
+  body:not(:has(.start-layout)) .raster-single-header {
+    padding: 18px 20px;
+    border-bottom: 1px solid var(--ui-border);
+    background: linear-gradient(180deg, #ffffff 0%, #fafcff 100%);
+  }
+
+  body:not(:has(.start-layout)) .professional-competence-group,
+  body:not(:has(.start-layout)) .speech-competence-group {
+    border: 1px solid var(--ui-border);
+    border-radius: 14px;
+    background: #fff;
+    box-shadow: none;
+    overflow: hidden;
+  }
+
+  body:not(:has(.start-layout)) .professional-competence-group > summary,
+  body:not(:has(.start-layout)) .speech-competence-group > summary {
+    background: #f4f8fd;
+    color: #24466f;
+    padding: 13px 16px;
+  }
+
+  body:not(:has(.start-layout)) .competence-topic {
+    border-color: #e8edf4;
+    background: #fcfdff;
+    border-radius: 12px;
+  }
+
+  body:not(:has(.start-layout)) .competence-rating-button {
+    border-color: #dbe4ef;
+    background: #fff;
+    color: #5f6e82;
+  }
+
+  body:not(:has(.start-layout)) .competence-rating-button.is-active {
+    border-color: #5f8ec4;
+    background: #eaf3fd;
+    color: #214f82;
+    box-shadow: inset 0 0 0 1px rgba(47,103,165,.08);
+  }
+
+  /* Förderplan: vier klar unterscheidbare Arbeitskarten untereinander */
+  body:not(:has(.start-layout)) .field-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+
+  body:not(:has(.start-layout)) .plan-field-card {
+    position: relative;
+    border: 1px solid var(--ui-border);
+    border-radius: 15px;
+    padding: 16px 18px 18px;
+    box-shadow: none;
+  }
+
+  body:not(:has(.start-layout)) .plan-field-card::before {
+    content: "";
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: 5px;
+    border-radius: 15px 0 0 15px;
+  }
+
+  body:not(:has(.start-layout)) .plan-field-istStand {
+    background: var(--ui-blue-soft);
+  }
+  body:not(:has(.start-layout)) .plan-field-istStand::before {
+    background: #78a5d5;
+  }
+
+  body:not(:has(.start-layout)) .plan-field-ziele {
+    background: var(--ui-green-soft);
+  }
+  body:not(:has(.start-layout)) .plan-field-ziele::before {
+    background: #77ae8c;
+  }
+
+  body:not(:has(.start-layout)) .plan-field-massnahmen {
+    background: var(--ui-orange-soft);
+  }
+  body:not(:has(.start-layout)) .plan-field-massnahmen::before {
+    background: #d59a66;
+  }
+
+  body:not(:has(.start-layout)) .plan-field-evaluation {
+    background: var(--ui-purple-soft);
+  }
+  body:not(:has(.start-layout)) .plan-field-evaluation::before {
+    background: #9a86ca;
+  }
+
+  body:not(:has(.start-layout)) .plan-field-card .field-label {
+    color: #223a5b;
+    font-size: 1.03rem;
+    font-weight: 760;
+  }
+
+  body:not(:has(.start-layout)) .plan-field-card textarea {
+    min-height: 126px;
+    border: 1px solid rgba(195, 208, 224, .9);
+    border-radius: 11px;
+    background: rgba(255,255,255,.82);
+    color: #283a52;
+    padding: 12px 13px;
+    box-shadow: inset 0 1px 2px rgba(38,60,90,.035);
+  }
+
+  body:not(:has(.start-layout)) .plan-field-istStand textarea {
+    min-height: 190px;
+  }
+
+  body:not(:has(.start-layout)) .text-source-card {
+    border-color: rgba(211,221,233,.95);
+    background: rgba(255,255,255,.62);
+    border-radius: 11px;
+  }
+
+  /* Buttons */
+  body:not(:has(.start-layout)) button.primary,
+  body:not(:has(.start-layout)) .bottom-nav button.primary {
+    border-color: #2f67a5;
+    background: linear-gradient(180deg, #3d75b3 0%, #2f67a5 100%);
+    color: #fff;
+    box-shadow: 0 4px 10px rgba(47,103,165,.16);
+  }
+
+  body:not(:has(.start-layout)) button.primary:hover,
+  body:not(:has(.start-layout)) button.primary:focus-visible,
+  body:not(:has(.start-layout)) .bottom-nav button.primary:hover,
+  body:not(:has(.start-layout)) .bottom-nav button.primary:focus-visible {
+    border-color: #285b94;
+    background: linear-gradient(180deg, #356da9 0%, #285b94 100%);
+    color: #fff;
+  }
+
+  body:not(:has(.start-layout)) .quiet-button,
+  body:not(:has(.start-layout)) .secondary-button,
+  body:not(:has(.start-layout)) .small-button,
+  body:not(:has(.start-layout)) .section-nav-button,
+  body:not(:has(.start-layout)) .bottom-nav button:not(.primary) {
+    border-color: #d7e1ec;
+    background: rgba(255,255,255,.9);
+    color: #405772;
+    box-shadow: none;
+  }
+
+  /* Untere Navigation wie ruhige Aktionsleiste */
+  body:not(:has(.start-layout)) .bottom-nav {
+    left: var(--workspace-sidebar-width);
+    right: 0;
+    width: auto;
+    max-width: none;
+    margin: 0;
+    padding: 11px clamp(24px, 4vw, 64px);
+    border-top: 1px solid var(--ui-border);
+    background: rgba(255,255,255,.93);
+    box-shadow: 0 -8px 24px rgba(42,63,90,.045);
+    backdrop-filter: blur(16px);
+    transition: left 180ms ease;
+  }
+
+  body:has(.workspace-sidebar.is-collapsed) .bottom-nav {
+    left: var(--workspace-sidebar-collapsed);
+  }
+
+  .app-footer {
+    display: none;
+  }
+}
+
+/* Kleinere Bildschirme: Seitenleiste automatisch kompakt */
+@media screen and (max-width: 1050px) {
+  body:not(:has(.start-layout)) .page-shell {
+    padding-left: calc(var(--workspace-sidebar-collapsed) + 22px);
+    padding-right: 22px;
+  }
+
+  .workspace-sidebar {
+    width: var(--workspace-sidebar-collapsed);
+    padding-left: 10px;
+    padding-right: 10px;
+  }
+
+  .workspace-sidebar .workspace-brand-text,
+  .workspace-sidebar .workspace-nav-label {
+    opacity: 0;
+    width: 0;
+    overflow: hidden;
+  }
+
+  .workspace-sidebar-toggle {
+    display: none;
+  }
+
+  .workspace-topbar,
+  body:has(.workspace-sidebar.is-collapsed) .workspace-topbar {
+    left: var(--workspace-sidebar-collapsed);
+    grid-template-columns: 1fr auto;
+  }
+
+  .workspace-page-brand {
+    display: none;
+  }
+
+  .progress-phase-label {
+    display: none;
+  }
+
+  body:not(:has(.start-layout)) .bottom-nav,
+  body:has(.workspace-sidebar.is-collapsed) .bottom-nav {
+    left: var(--workspace-sidebar-collapsed);
+  }
+}
+
+@media screen and (max-width: 720px) {
+  body:not(:has(.start-layout)) .page-shell {
+    padding: 92px 12px 130px;
+  }
+
+  .workspace-sidebar {
+    display: none;
+  }
+
+  .workspace-topbar,
+  body:has(.workspace-sidebar.is-collapsed) .workspace-topbar {
+    left: 0;
+    min-height: 72px;
+    grid-template-columns: 1fr auto;
+    padding: 10px 12px;
+  }
+
+  .workspace-top-actions .quiet-button {
+    padding-left: 9px;
+    padding-right: 9px;
+    font-size: .8rem;
+  }
+
+  .progress-phase-line {
+    width: 12px;
+  }
+
+  body:not(:has(.start-layout)) .competence-overview-list,
+  body:not(:has(.start-layout)) .raster-overview-list {
+    grid-template-columns: 1fr;
+  }
+
+  body:not(:has(.start-layout)) .bottom-nav,
+  body:has(.workspace-sidebar.is-collapsed) .bottom-nav {
+    left: 0;
+  }
+}
+
+@media print {
+  .workspace-sidebar,
+  .workspace-topbar {
+    display: none !important;
+  }
+}
+
+
+/* ==========================================================
+   v325 – Startseite + gleichmäßige Navigation
+   ========================================================== */
+
+@media screen {
+  /* ---------- Startseite im gleichen Designsystem ---------- */
+
+  body:has(.start-layout) {
+    min-height: 100vh;
+    background:
+      radial-gradient(circle at 82% -8%, rgba(215, 229, 247, .72), transparent 31%),
+      linear-gradient(180deg, #f8fafd 0%, #f2f6fb 100%);
+    color: var(--ui-text);
+  }
+
+  body:has(.start-layout) .app-shell {
+    width: min(1180px, calc(100% - 48px));
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: 34px 0 54px;
+  }
+
+  body:has(.start-layout) .start-layout {
+    gap: 18px;
+  }
+
+  body:has(.start-layout) .start-hero {
+    position: relative;
+    overflow: hidden;
+    min-height: 190px;
+    display: flex;
+    align-items: center;
+    border: 1px solid var(--ui-border);
+    border-radius: 22px;
+    background:
+      radial-gradient(circle at 88% 18%, rgba(210, 231, 245, .9), transparent 28%),
+      linear-gradient(135deg, #ffffff 0%, #f8fbff 62%, #eef6fb 100%);
+    box-shadow: var(--ui-shadow);
+    padding: 32px 34px;
+  }
+
+  body:has(.start-layout) .start-hero::before {
+    content: "";
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: 6px;
+    background: linear-gradient(180deg, #4b7fb8 0%, #75aaa5 100%);
+  }
+
+  body:has(.start-layout) .start-hero-copy {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+  }
+
+  body:has(.start-layout) .start-hero-icon {
+    width: 66px;
+    height: 66px;
+    flex: 0 0 66px;
+    border: 1px solid #d9e4f0;
+    border-radius: 18px;
+    background: rgba(255,255,255,.9);
+    padding: 12px;
+    box-shadow: 0 9px 24px rgba(44, 72, 105, .09);
+  }
+
+  body:has(.start-layout) .start-hero h2 {
+    color: #17325a;
+    font-size: clamp(2rem, 3vw, 2.75rem);
+    letter-spacing: -.03em;
+    font-weight: 780;
+  }
+
+  body:has(.start-layout) .start-hero-subtitle {
+    margin-top: 6px !important;
+    color: #4c6d91 !important;
+    font-size: 1.03rem !important;
+    font-weight: 700;
+  }
+
+  body:has(.start-layout) .start-hero p:not(.start-hero-subtitle) {
+    max-width: 760px;
+    margin-top: 10px;
+    color: #65758b;
+    font-size: .98rem;
+    line-height: 1.55;
+  }
+
+  body:has(.start-layout) .start-dashboard-section {
+    gap: 15px;
+    border: 1px solid var(--ui-border);
+    border-radius: 19px;
+    background: rgba(255,255,255,.9);
+    padding: 21px;
+    box-shadow: var(--ui-shadow-soft);
+  }
+
+  body:has(.start-layout) .start-action-section,
+  body:has(.start-layout) .start-recent-panel,
+  body:has(.start-layout) .start-team-section,
+  body:has(.start-layout) .start-overview-section {
+    border-color: var(--ui-border);
+    background: rgba(255,255,255,.9);
+  }
+
+  body:has(.start-layout) .start-section-heading {
+    gap: 12px;
+    color: #46617f;
+    font-size: .78rem;
+    font-weight: 760;
+    letter-spacing: .07em;
+    text-transform: uppercase;
+  }
+
+  body:has(.start-layout) .start-section-heading::after {
+    height: 1px;
+    background: #e3eaf2;
+  }
+
+  body:has(.start-layout) .start-action-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 14px;
+    align-items: stretch;
+  }
+
+  body:has(.start-layout) .start-action-card {
+    position: relative;
+    overflow: hidden;
+    min-height: 150px;
+    display: grid;
+    grid-template-rows: auto 1fr;
+    align-content: start;
+    gap: 10px;
+    border: 1px solid var(--ui-border);
+    border-radius: 16px;
+    background: #fff;
+    box-shadow: 0 4px 14px rgba(43, 63, 91, .045);
+    padding: 20px 54px 18px 20px;
+    color: var(--ui-text);
+    text-align: left;
+    transition: transform 150ms ease, box-shadow 150ms ease, border-color 150ms ease;
+  }
+
+  body:has(.start-layout) .start-action-card::before {
+    content: "";
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: 5px;
+    height: auto;
+    background: #b9c8d9;
+  }
+
+  body:has(.start-layout) .start-action-card::after {
+    right: 17px;
+    top: 17px;
+    width: 30px;
+    height: 30px;
+    border-radius: 9px;
+    background: #edf3fa;
+    color: #4c6f98;
+    font-weight: 800;
+  }
+
+  body:has(.start-layout) .start-action-card:hover {
+    transform: translateY(-2px);
+    border-color: #cddbea;
+    background: #fff;
+    box-shadow: var(--ui-shadow);
+  }
+
+  body:has(.start-layout) .start-action-card span {
+    max-width: none;
+    color: #203958;
+    font-size: 1.03rem;
+    font-weight: 760;
+  }
+
+  body:has(.start-layout) .start-action-card small {
+    color: #718095;
+    font-size: .9rem;
+    line-height: 1.45;
+  }
+
+  body:has(.start-layout) .start-action-primary {
+    border-color: #cfe0ef;
+    border-left: 1px solid #cfe0ef;
+    background: linear-gradient(180deg, #fafdff 0%, #f2f7fc 100%);
+    box-shadow: 0 7px 18px rgba(52, 93, 137, .07);
+  }
+
+  body:has(.start-layout) .start-action-primary::before {
+    background: #4f7faf;
+  }
+
+  body:has(.start-layout) .start-action-primary::after {
+    background: #2f67a5;
+    border-color: #2f67a5;
+    color: #fff;
+  }
+
+  body:has(.start-layout) .start-action-card:nth-child(2)::before {
+    background: #6fa29c;
+  }
+
+  body:has(.start-layout) .start-action-card:nth-child(2)::after {
+    background: #eef8f6;
+    color: #4b827d;
+  }
+
+  body:has(.start-layout) .start-action-card:nth-child(3)::before {
+    background: #8b7db5;
+  }
+
+  body:has(.start-layout) .start-action-card:nth-child(3)::after {
+    background: #f4f0fb;
+    color: #7463a3;
+  }
+
+  body:has(.start-layout) .start-action-extra {
+    margin-top: 3px;
+    padding-top: 16px;
+    border-top: 1px solid #e7edf4;
+  }
+
+  body:has(.start-layout) .start-action-extra p {
+    color: #6d7c90;
+    font-size: .78rem;
+    font-weight: 740;
+    letter-spacing: .02em;
+  }
+
+  body:has(.start-layout) .start-action-extra-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  body:has(.start-layout) .start-action-extra-grid .quiet-button {
+    min-height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 9px;
+    border: 1px solid #dde6f0;
+    border-radius: 12px;
+    background: #fbfcfe;
+    color: #445a75;
+    padding: 11px 13px;
+    box-shadow: none;
+    text-align: left;
+  }
+
+  body:has(.start-layout) .start-action-extra-grid .quiet-button::before {
+    content: attr(data-tool-icon);
+    width: 26px;
+    height: 26px;
+    flex: 0 0 26px;
+    display: grid;
+    place-items: center;
+    border-radius: 8px;
+    background: #eef3f8;
+    color: #55728f;
+    font-size: .78rem;
+    font-weight: 800;
+  }
+
+  body:has(.start-layout) .start-action-extra-grid .quiet-button:hover {
+    border-color: #cad8e7;
+    background: #fff;
+  }
+
+  body:has(.start-layout) .start-panel-title h2 {
+    color: #203958;
+    font-size: 1.28rem;
+  }
+
+  body:has(.start-layout) .start-panel-title .hint,
+  body:has(.start-layout) .draft-mini-list .hint {
+    color: #748297;
+  }
+
+  body:has(.start-layout) .draft-item,
+  body:has(.start-layout) .draft-mini-list > * {
+    border-color: #e1e8f0;
+    border-radius: 13px;
+    background: #fbfcfe;
+    box-shadow: none;
+  }
+
+  /* ---------- linkes Arbeitsmenü exakt gleichmäßig ---------- */
+
+  .workspace-nav,
+  .workspace-sidebar-bottom {
+    gap: 6px;
+  }
+
+  .workspace-nav-item {
+    width: 100%;
+    height: 46px;
+    min-height: 46px;
+    max-height: 46px;
+    display: grid;
+    grid-template-columns: 30px minmax(0, 1fr);
+    align-items: center;
+    column-gap: 10px;
+    margin: 0;
+    padding: 0 12px;
+    border: 1px solid transparent;
+    border-radius: 11px;
+    background: transparent;
+    box-shadow: none;
+    line-height: 1;
+  }
+
+  .workspace-nav-item:hover,
+  .workspace-nav-item:focus-visible {
+    border-color: #e0e8f1;
+    background: #eef4fa;
+  }
+
+  .workspace-nav-item.is-active {
+    border-color: #d8e5f2;
+    background: #e8f1fb;
+  }
+
+  .workspace-nav-icon {
+    width: 30px;
+    min-width: 30px;
+    height: 30px;
+    display: grid;
+    place-items: center;
+    margin: 0;
+    border-radius: 9px;
+    background: #f0f4f8;
+    color: #526c88;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    font-size: .92rem;
+    font-weight: 700;
+    line-height: 1;
+  }
+
+  .workspace-nav-item.is-active .workspace-nav-icon {
+    background: #dceafb;
+    color: #2c6199;
+  }
+
+  .workspace-nav-label {
+    display: block;
+    min-width: 0;
+    margin: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: inherit;
+    font-size: .91rem;
+    line-height: 1.2;
+    white-space: nowrap;
+  }
+
+  .workspace-sidebar.is-collapsed .workspace-nav-item {
+    grid-template-columns: 30px;
+    justify-content: center;
+    padding: 0;
+  }
+
+  .workspace-sidebar.is-collapsed .workspace-nav-icon {
+    margin: 0 auto;
+  }
+
+  .workspace-sidebar-bottom {
+    padding-top: 12px;
+  }
+}
+
+@media screen and (max-width: 900px) {
+  body:has(.start-layout) .app-shell {
+    width: min(100% - 28px, 1180px);
+    padding-top: 20px;
+  }
+
+  body:has(.start-layout) .start-action-grid,
+  body:has(.start-layout) .start-action-extra-grid {
+    grid-template-columns: 1fr;
+  }
+
+  body:has(.start-layout) .start-action-card {
+    min-height: 112px;
+  }
+
+  body:has(.start-layout) .start-hero {
+    min-height: 0;
+    padding: 24px;
+  }
+}
+
+@media screen and (max-width: 620px) {
+  body:has(.start-layout) .start-hero-copy {
+    align-items: flex-start;
+  }
+
+  body:has(.start-layout) .start-hero-icon {
+    width: 52px;
+    height: 52px;
+    flex-basis: 52px;
+    border-radius: 14px;
+  }
+
+  body:has(.start-layout) .start-hero h2 {
+    font-size: 1.75rem;
+  }
+}
+
+
+/* ==========================================================
+   v326 – durchgängige Farbwelt, Topbar und App-Icon
+   ========================================================== */
+
+:root {
+  /* ältere warme Variablen bewusst auf das neue Designsystem umbiegen */
+  --bg: #f4f7fb;
+  --panel: #ffffff;
+  --line: #dfe7f0;
+  --line-strong: #aebdcd;
+  --text: #13233f;
+  --muted: #6f7d93;
+  --primary: #2f67a5;
+  --primary-dark: #285b94;
+  --primary-strong: #214f82;
+  --nav-soft: #edf4fc;
+  --nav-line: #8eb3d6;
+  --accent: #5d9e98;
+  --soft: #eef5fb;
+  --surface-warm: #f8fbff;
+  --surface-sage: #eef8f6;
+  --surface-sand: #f3f7fb;
+  --sage-line: #d7e9e5;
+  --sand-line: #dce6f1;
+  --danger: #9a4a47;
+  --danger-soft: #fff5f4;
+  --focus-ring: rgba(47, 103, 165, .22);
+  --warning: #7d6947;
+  --ok: #4d836f;
+  --shadow: 0 10px 28px rgba(43, 63, 91, .07);
+  --shadow-soft: 0 5px 16px rgba(43, 63, 91, .05);
+  --shadow-lifted: 0 16px 34px rgba(43, 63, 91, .10);
+}
+
+@media screen {
+  /* alte beige/goldene Arbeitskarten neutralisieren */
+  body:not(:has(.start-layout)) .card,
+  body:not(:has(.start-layout)) .subsection,
+  body:not(:has(.start-layout)) .notice,
+  body:not(:has(.start-layout)) .info-box,
+  body:not(:has(.start-layout)) .quality-card,
+  body:not(:has(.start-layout)) .storage-card,
+  body:not(:has(.start-layout)) .print-output-panel {
+    border-color: var(--ui-border) !important;
+    background: rgba(255,255,255,.96) !important;
+    color: var(--ui-text);
+    box-shadow: var(--ui-shadow-soft);
+  }
+
+  body:not(:has(.start-layout)) .card h2,
+  body:not(:has(.start-layout)) .card h3,
+  body:not(:has(.start-layout)) .subsection h3 {
+    color: #23466f;
+  }
+
+  body:not(:has(.start-layout)) input,
+  body:not(:has(.start-layout)) select,
+  body:not(:has(.start-layout)) textarea {
+    border-color: #d7e1ec !important;
+    background: #fff !important;
+    color: #24364f;
+  }
+
+  body:not(:has(.start-layout)) input:focus,
+  body:not(:has(.start-layout)) select:focus,
+  body:not(:has(.start-layout)) textarea:focus {
+    border-color: #6e9aca !important;
+    box-shadow: 0 0 0 3px rgba(47,103,165,.10) !important;
+  }
+
+  /* Topbar jetzt als ein einziges ruhiges, horizontales Band */
+  .workspace-topbar {
+    min-height: 78px;
+    grid-template-columns: 150px minmax(0, 1fr) 180px;
+    gap: 18px;
+    padding-top: 10px;
+    padding-bottom: 10px;
+    background: rgba(250,252,255,.96);
+    box-shadow: 0 4px 18px rgba(43,63,91,.035);
+  }
+
+  .workspace-context-label {
+    display: grid;
+    gap: 2px;
+    line-height: 1.15;
+  }
+
+  .workspace-context-label span {
+    color: #8190a4;
+    font-size: .72rem;
+    font-weight: 650;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+  }
+
+  .workspace-context-label strong {
+    color: #284d78;
+    font-size: .95rem;
+    font-weight: 760;
+  }
+
+  .progress-phases {
+    width: 100%;
+    max-width: 690px;
+    margin: 0 auto;
+    flex-wrap: nowrap !important;
+    overflow: visible;
+  }
+
+  .progress-phases .progress-phase {
+    flex: 0 0 auto;
+    padding-left: 5px;
+    padding-right: 5px;
+  }
+
+  .progress-phase-line {
+    flex: 1 1 44px;
+    min-width: 22px;
+    max-width: 72px;
+  }
+
+  .workspace-top-actions .quiet-button {
+    min-width: 160px;
+    border-color: #cfdceb !important;
+    background: #ffffff !important;
+    color: #315f91 !important;
+    font-weight: 700;
+  }
+
+  /* Brand/Icon im Seitenmenü */
+  .workspace-brand img {
+    width: 40px;
+    height: 40px;
+    flex-basis: 40px;
+    border-radius: 50%;
+    box-shadow: 0 5px 14px rgba(47,103,165,.13);
+  }
+
+  .workspace-brand-text strong {
+    color: #17325a;
+  }
+
+  /* Startseite: letzte warmen Bestandteile entfernen */
+  body:has(.start-layout) .start-hero {
+    background:
+      radial-gradient(circle at 88% 14%, rgba(222,235,248,.95), transparent 30%),
+      linear-gradient(135deg, #ffffff 0%, #f8fbff 60%, #eef7f6 100%) !important;
+  }
+
+  body:has(.start-layout) .start-hero::before {
+    background: linear-gradient(180deg, #2f67a5 0%, #5d9e98 100%) !important;
+  }
+
+  body:has(.start-layout) .start-hero-icon {
+    width: 66px;
+    height: 66px;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background: transparent;
+    box-shadow: 0 8px 20px rgba(47,103,165,.14);
+  }
+
+  body:has(.start-layout) .start-hero-subtitle {
+    display: inline-block;
+    width: fit-content;
+    padding: 6px 12px;
+    border-radius: 999px;
+    background: #eef5fb !important;
+    color: #3e668f !important;
+  }
+
+  body:has(.start-layout) .start-section-heading::before {
+    background: #8eb3d6 !important;
+  }
+
+  body:has(.start-layout) .start-recent-panel,
+  body:has(.start-layout) .start-team-section,
+  body:has(.start-layout) .start-overview-section,
+  body:has(.start-layout) .start-dashboard-section,
+  body:has(.start-layout) .start-help-section,
+  body:has(.start-layout) .support-callout {
+    border-color: var(--ui-border) !important;
+    background: rgba(255,255,255,.94) !important;
+    box-shadow: var(--ui-shadow-soft);
+  }
+
+  body:has(.start-layout) .draft-item,
+  body:has(.start-layout) .draft-mini-list > * {
+    border-left-color: #dce6f1 !important;
+    background: #fbfdff !important;
+  }
+
+  body:has(.start-layout) button:not(.start-action-card).quiet-button,
+  body:has(.start-layout) .draft-item button,
+  body:has(.start-layout) .support-callout button {
+    border-color: #d7e1ec !important;
+    background: #ffffff !important;
+    color: #405b78 !important;
+  }
+
+  body:has(.start-layout) button:not(.start-action-card).quiet-button:hover,
+  body:has(.start-layout) .draft-item button:hover,
+  body:has(.start-layout) .support-callout button:hover {
+    border-color: #bfcfe0 !important;
+    background: #f7fbff !important;
+  }
+
+  /* die drei Hauptkarten bleiben unterscheidbar, aber innerhalb derselben Palette */
+  body:has(.start-layout) .start-action-primary::before { background: #2f67a5 !important; }
+  body:has(.start-layout) .start-action-card:nth-child(2)::before { background: #5d9e98 !important; }
+  body:has(.start-layout) .start-action-card:nth-child(3)::before { background: #7b79ad !important; }
+
+  /* Footer weniger warm */
+  body:has(.start-layout) .app-footer,
+  body:has(.start-layout) footer {
+    color: #76859a !important;
+  }
+}
+
+@media screen and (max-width: 1180px) {
+  .workspace-topbar {
+    grid-template-columns: 110px minmax(0, 1fr) 150px;
+    gap: 10px;
+    padding-left: 24px;
+    padding-right: 24px;
+  }
+  .workspace-top-actions .quiet-button { min-width: 140px; }
+  .progress-phase-label { font-size: .88rem; }
+}
+
+@media screen and (max-width: 1050px) {
+  .workspace-context-label { display: none; }
+  .workspace-topbar,
+  body:has(.workspace-sidebar.is-collapsed) .workspace-topbar {
+    grid-template-columns: minmax(0,1fr) auto;
+  }
+  .progress-phases { justify-content: flex-start; }
+}
+
+
+/* ==========================================================
+   v327 – letzter Farb-Cleanup
+   Alte harte Beige-/Goldwerte aus früheren Designschichten
+   werden hier gezielt überschrieben.
+   ========================================================== */
+
+@media screen {
+
+  /* Förderbereichs- und Übersichtskarten */
+  body:not(:has(.start-layout)) .input-mode-card,
+  body:not(:has(.start-layout)) .raster-overview-card,
+  body:not(:has(.start-layout)) .competence-overview-card,
+  body:not(:has(.start-layout)) .quality-area-card,
+  body:not(:has(.start-layout)) .agreement-card,
+  body:not(:has(.start-layout)) .storage-accordion-item,
+  body:not(:has(.start-layout)) .draft-item {
+    border: 1px solid #dfe7f0 !important;
+    border-left: 6px solid #8eb3d6 !important;
+    background: #ffffff !important;
+    color: #203958 !important;
+    box-shadow: 0 7px 18px rgba(43, 63, 91, .045) !important;
+  }
+
+  body:not(:has(.start-layout)) .quality-area-card::before,
+  body:not(:has(.start-layout)) .raster-overview-card::before,
+  body:not(:has(.start-layout)) .competence-overview-card::before {
+    background: #8eb3d6 !important;
+  }
+
+  body:not(:has(.start-layout)) .input-mode-card:hover,
+  body:not(:has(.start-layout)) .input-mode-card:focus-visible,
+  body:not(:has(.start-layout)) .input-mode-card.is-active,
+  body:not(:has(.start-layout)) .raster-overview-card:hover,
+  body:not(:has(.start-layout)) .raster-overview-card:focus-visible,
+  body:not(:has(.start-layout)) .competence-overview-card:hover,
+  body:not(:has(.start-layout)) .competence-overview-card:focus-visible {
+    border-color: #bfd0e2 !important;
+    border-left-color: #5d9e98 !important;
+    background: #f8fbfe !important;
+    box-shadow: 0 9px 20px rgba(43, 63, 91, .07) !important;
+  }
+
+  body:not(:has(.start-layout)) .raster-overview-card:hover::before,
+  body:not(:has(.start-layout)) .raster-overview-card:focus-visible::before,
+  body:not(:has(.start-layout)) .competence-overview-card:hover::before,
+  body:not(:has(.start-layout)) .competence-overview-card:focus-visible::before {
+    background: #5d9e98 !important;
+  }
+
+  body:not(:has(.start-layout)) .raster-overview-card span,
+  body:not(:has(.start-layout)) .competence-overview-card span,
+  body:not(:has(.start-layout)) .input-mode-card strong,
+  body:not(:has(.start-layout)) .quality-area-card h3,
+  body:not(:has(.start-layout)) .quality-area-card strong {
+    color: #203958 !important;
+  }
+
+  /* Status-Pills: kein Beige/Gold mehr */
+  body:not(:has(.start-layout)) .raster-overview-card small.is-empty,
+  body:not(:has(.start-layout)) .competence-overview-card small.is-empty,
+  body:not(:has(.start-layout)) .raster-filled-badge.is-empty {
+    border-color: #d6e0ea !important;
+    background: #f7f9fc !important;
+    color: #6d7c91 !important;
+  }
+
+  body:not(:has(.start-layout)) .raster-overview-card small.is-progress,
+  body:not(:has(.start-layout)) .competence-overview-card small.is-progress,
+  body:not(:has(.start-layout)) .raster-filled-badge.is-progress {
+    border-color: #b9d4e8 !important;
+    background: #edf6fc !important;
+    color: #315f8c !important;
+  }
+
+  body:not(:has(.start-layout)) .raster-overview-card small.is-complete,
+  body:not(:has(.start-layout)) .competence-overview-card small.is-complete,
+  body:not(:has(.start-layout)) .raster-filled-badge.is-complete {
+    border-color: #b9d9d3 !important;
+    background: #eef8f6 !important;
+    color: #477e79 !important;
+  }
+
+  /* Detailkarten der Förderbereiche */
+  body:not(:has(.start-layout)) .raster-card,
+  body:not(:has(.start-layout)) .competence-area,
+  body:not(:has(.start-layout)) .professional-competence-group,
+  body:not(:has(.start-layout)) .speech-competence-group {
+    border-color: #dfe7f0 !important;
+    background: #ffffff !important;
+    box-shadow: 0 10px 24px rgba(43, 63, 91, .055) !important;
+  }
+
+  body:not(:has(.start-layout)) .raster-single-header,
+  body:not(:has(.start-layout)) .competence-area > summary,
+  body:not(:has(.start-layout)) .raster-card-summary,
+  body:not(:has(.start-layout)) .professional-competence-group > summary,
+  body:not(:has(.start-layout)) .speech-competence-group > summary {
+    border-color: #e1e8f0 !important;
+    background: linear-gradient(90deg, #f2f7fc 0%, #f8fbfd 100%) !important;
+    color: #284d78 !important;
+  }
+
+  /* Ältere warme Hilfs-/Hinweisboxen */
+  body:not(:has(.start-layout)) .notice,
+  body:not(:has(.start-layout)) .team-import-warning,
+  body:not(:has(.start-layout)) .quality-area-incomplete,
+  body:not(:has(.start-layout)) .quality-field-row.is-missing,
+  body:not(:has(.start-layout)) .quality-summary strong,
+  body:not(:has(.start-layout)) .block-selection-preview,
+  body:not(:has(.start-layout)) .suggestion-panel,
+  body:not(:has(.start-layout)) .field-suggestion-panel {
+    border-color: #dce6f1 !important;
+    background: #f5f9fd !important;
+    color: #405b78 !important;
+  }
+
+  /* Arbeitsflächen, die noch alte #fffdfa/#fffefa-Hintergründe hatten */
+  body:not(:has(.start-layout)) .field-suggestion-text,
+  body:not(:has(.start-layout)) .positive-start-selector,
+  body:not(:has(.start-layout)) .compact-tip-row,
+  body:not(:has(.start-layout)) .compact-material-row,
+  body:not(:has(.start-layout)) .praxis-tip-group,
+  body:not(:has(.start-layout)) .praxis-tip-meta,
+  body:not(:has(.start-layout)) .praxis-tip-item,
+  body:not(:has(.start-layout)) .previous-plan-field,
+  body:not(:has(.start-layout)) .support-focus-option,
+  body:not(:has(.start-layout)) .quality-field-row,
+  body:not(:has(.start-layout)) .quality-empty-row,
+  body:not(:has(.start-layout)) .team-conflict-texts div {
+    border-color: #dfe7f0 !important;
+    background: #ffffff !important;
+  }
+
+  /* Alte gelb/beige Akzente im Qualitäts- und Speicherbereich */
+  body:not(:has(.start-layout)) .quality-area-incomplete,
+  body:not(:has(.start-layout)) .quality-warn {
+    border-left-color: #7fa8cc !important;
+  }
+
+  body:not(:has(.start-layout)) .storage-page > .card.stack,
+  body:not(:has(.start-layout)) .quality-page > .card.stack,
+  body:not(:has(.start-layout)) .storage-page-header {
+    border-color: #dfe7f0 !important;
+    background: #ffffff !important;
+    box-shadow: 0 8px 22px rgba(43, 63, 91, .05) !important;
+  }
+
+  /* Ruhige Standardbuttons statt warmer Altfarben */
+  body:not(:has(.start-layout)) .quiet-button,
+  body:not(:has(.start-layout)) .secondary-button,
+  body:not(:has(.start-layout)) .section-nav-button,
+  body:not(:has(.start-layout)) .small-button {
+    border-color: #d7e1ec !important;
+    background: #ffffff !important;
+    color: #405b78 !important;
+  }
+
+  body:not(:has(.start-layout)) .quiet-button:hover,
+  body:not(:has(.start-layout)) .secondary-button:hover,
+  body:not(:has(.start-layout)) .section-nav-button:hover,
+  body:not(:has(.start-layout)) .small-button:hover {
+    border-color: #bfd0e2 !important;
+    background: #f4f8fc !important;
+    color: #315f91 !important;
+  }
+
+  /* Ausnahme: die vier Förderplan-Arbeitskarten behalten ihre
+     bewusst gesetzten Pastellfarben */
+  body:not(:has(.start-layout)) .plan-field-istStand {
+    background: var(--ui-blue-soft) !important;
+  }
+
+  body:not(:has(.start-layout)) .plan-field-ziele {
+    background: var(--ui-green-soft) !important;
+  }
+
+  body:not(:has(.start-layout)) .plan-field-massnahmen {
+    background: var(--ui-orange-soft) !important;
+  }
+
+  body:not(:has(.start-layout)) .plan-field-evaluation {
+    background: var(--ui-purple-soft) !important;
+  }
+}
+
+
+/* ==========================================================
+   v328 – Markenbild + vollständige Farbvereinheitlichung
+   ========================================================== */
+:root {
+  --brand-navy: #214f82;
+  --brand-blue: #4f86ad;
+  --brand-sky: #8fc6dc;
+  --brand-teal: #68aaa6;
+  --brand-yellow: #efd58b;
+  --brand-ink: #17385e;
+  --brand-soft-blue: #eef6fb;
+  --brand-soft-teal: #eef8f6;
+  --brand-line: #d9e6f0;
+}
+
+@media screen {
+  /* Neues handgemaltes Markenbild */
+  body:has(.start-layout) .start-hero {
+    min-height: 250px;
+    background: linear-gradient(135deg,#ffffff 0%,#f7fbfe 60%,#eef8f6 100%) !important;
+  }
+  body:has(.start-layout) .start-hero-copy {
+    display: grid;
+    grid-template-columns: minmax(270px, 390px) minmax(0, 1fr);
+    gap: clamp(28px,5vw,70px);
+    align-items: center;
+  }
+  body:has(.start-layout) .start-brand-logo {
+    width: min(100%,390px);
+    height: auto;
+    display: block;
+    mix-blend-mode: multiply;
+  }
+  body:has(.start-layout) .start-hero-message {
+    max-width: 610px;
+    padding-left: 28px;
+    border-left: 1px solid #dbe8ef;
+  }
+  body:has(.start-layout) .start-hero-message p {
+    margin: 0 !important;
+    color: #5d7188 !important;
+    font-size: 1.05rem !important;
+    line-height: 1.65 !important;
+  }
+  .workspace-brand img {
+    width: 48px !important;
+    height: 48px !important;
+    flex-basis: 48px !important;
+    object-fit: cover;
+    border-radius: 14px !important;
+    box-shadow: none !important;
+    background: #fff;
+  }
+  .workspace-brand-text span { font-size:.66rem; }
+
+  /* Keine alten Sand-/Goldflächen mehr. Gelb bleibt nur als sehr feiner Markenakzent. */
+  body:has(.start-layout) .start-support-card {
+    border: 1px solid #dce8f0 !important;
+    border-left: 4px solid var(--brand-teal) !important;
+    background: linear-gradient(90deg,#f7fbfd 0%,#f4faf8 100%) !important;
+    box-shadow: 0 5px 14px rgba(43,63,91,.04) !important;
+  }
+  body:has(.start-layout) .start-support-card p { color:#526a80 !important; }
+  body:has(.start-layout) .support-link-button,
+  body:has(.start-layout) .draft-item button,
+  body:has(.start-layout) .draft-mini-list button {
+    border-color:#cdddea !important;
+    background:#fff !important;
+    color:#315f8c !important;
+    box-shadow:none !important;
+  }
+  body:has(.start-layout) .support-link-button:hover,
+  body:has(.start-layout) .draft-item button:hover,
+  body:has(.start-layout) .draft-mini-list button:hover {
+    border-color:#9fc4d8 !important;
+    background:#eef6fb !important;
+    color:#214f82 !important;
+  }
+
+  /* Alle allgemeinen Aktionsbuttons – auch primary – in derselben Blau/Türkis-Welt */
+  body:not(:has(.start-layout)) button.primary,
+  body:not(:has(.start-layout)) .bottom-nav button.primary,
+  body:not(:has(.start-layout)) .storage-main-actions button.primary,
+  body:not(:has(.start-layout)) .storage-panel-actions button.primary,
+  body:not(:has(.start-layout)) .print-output-actions button.primary,
+  body:not(:has(.start-layout)) .actions button.primary {
+    border-color:#8eb7d0 !important;
+    background:linear-gradient(180deg,#f4f9fd 0%,#eaf4fa 100%) !important;
+    color:#214f82 !important;
+    box-shadow:0 2px 7px rgba(47,103,165,.07) !important;
+  }
+  body:not(:has(.start-layout)) button.primary:hover,
+  body:not(:has(.start-layout)) button.primary:focus-visible,
+  body:not(:has(.start-layout)) .bottom-nav button.primary:hover,
+  body:not(:has(.start-layout)) .bottom-nav button.primary:focus-visible,
+  body:not(:has(.start-layout)) .storage-main-actions button.primary:hover,
+  body:not(:has(.start-layout)) .storage-panel-actions button.primary:hover,
+  body:not(:has(.start-layout)) .print-output-actions button.primary:hover,
+  body:not(:has(.start-layout)) .actions button.primary:hover {
+    border-color:#6fa5c4 !important;
+    background:linear-gradient(180deg,#eaf6fb 0%,#e3f2f3 100%) !important;
+    color:#173f69 !important;
+  }
+  body:not(:has(.start-layout)) .print-output-actions button:not(.primary),
+  body:not(:has(.start-layout)) .actions button:not(.primary),
+  body:not(:has(.start-layout)) .bottom-nav button:not(.primary),
+  body:not(:has(.start-layout)) .storage-main-actions button:not(.primary),
+  body:not(:has(.start-layout)) .storage-panel-actions button:not(.primary) {
+    border-color:#d3e0eb !important;
+    background:#fff !important;
+    color:#3f607f !important;
+    box-shadow:none !important;
+  }
+
+  /* Ausgabe-Bedienfeld als Teil der App, amtliche Vorschau bleibt unverändert */
+  body:not(:has(.start-layout)) .print-output-panel {
+    border:1px solid #dce7f0 !important;
+    background:#fff !important;
+    box-shadow:0 8px 22px rgba(43,63,91,.05) !important;
+  }
+  body:not(:has(.start-layout)) .print-output-header {
+    padding:4px 4px 12px;
+    border-bottom:1px solid #e4ebf2;
+  }
+  body:not(:has(.start-layout)) .print-output-actions {
+    padding:2px 4px 0;
+  }
+
+  /* Statusfarben vollständig aus der Markenpalette */
+  body:not(:has(.start-layout)) .raster-overview-card small.is-progress,
+  body:not(:has(.start-layout)) .competence-overview-card small.is-progress,
+  body:not(:has(.start-layout)) .raster-filled-badge.is-progress {
+    border-color:#b9d7e6 !important;
+    background:#edf7fb !important;
+    color:#376b8d !important;
+  }
+  body:not(:has(.start-layout)) .raster-overview-card small.is-complete,
+  body:not(:has(.start-layout)) .competence-overview-card small.is-complete,
+  body:not(:has(.start-layout)) .raster-filled-badge.is-complete {
+    border-color:#b7d9d5 !important;
+    background:#eef8f6 !important;
+    color:#477f79 !important;
+  }
+
+  /* Auswahlzustände ebenfalls nicht mehr altgrün/beige */
+  body:not(:has(.start-layout)) .competence-rating-button.is-active,
+  body:not(:has(.start-layout)) button[aria-pressed="true"] {
+    border-color:#79a9c7 !important;
+    background:#eaf5fb !important;
+    color:#214f82 !important;
+    box-shadow:inset 0 0 0 1px rgba(79,134,173,.08) !important;
+  }
+
+  /* Fortschritt: Blau + Aquarell-Türkis */
+  .progress-phase.is-complete .progress-phase-number {
+    border-color:#74aaa5 !important;
+    background:#74aaa5 !important;
+  }
+  .progress-phase.active .progress-phase-number {
+    border-color:#3f78ad !important;
+    background:#3f78ad !important;
+  }
+}
+
+@media screen and (max-width:760px) {
+  body:has(.start-layout) .start-hero-copy { grid-template-columns:1fr; gap:18px; }
+  body:has(.start-layout) .start-brand-logo { width:min(100%,320px); margin:0 auto; }
+  body:has(.start-layout) .start-hero-message { padding:16px 0 0; border-left:0; border-top:1px solid #dbe8ef; }
+}
+
+
+/* ==========================================================
+   v329 – Startlogo kompakter
+   ========================================================== */
+
+@media screen {
+  body:has(.start-layout) .start-hero {
+    min-height: 150px !important;
+    padding: 22px 28px !important;
+  }
+
+  body:has(.start-layout) .start-hero-copy {
+    display: grid !important;
+    grid-template-columns: 380px 1fr !important;
+    align-items: center !important;
+    gap: 34px !important;
+  }
+
+  body:has(.start-layout) .start-hero-logo,
+  body:has(.start-layout) .start-hero-logo img,
+  body:has(.start-layout) .brand-logo-full {
+    width: 360px !important;
+    max-width: 360px !important;
+    height: auto !important;
+    max-height: 250px !important;
+    object-fit: contain !important;
+    object-position: left center !important;
+    display: block !important;
+  }
+
+  body:has(.start-layout) .start-hero-text {
+    max-width: 720px !important;
+  }
+
+  body:has(.start-layout) .start-hero p {
+    margin-top: 0 !important;
+    font-size: .96rem !important;
+    line-height: 1.5 !important;
+  }
+
+  body:has(.start-layout) .start-hero-copy::after {
+    display: none !important;
+  }
+}
+
+@media screen and (max-width: 980px) {
+  body:has(.start-layout) .start-hero-copy {
+    grid-template-columns: 300px 1fr !important;
+    gap: 24px !important;
+  }
+
+  body:has(.start-layout) .start-hero-logo,
+  body:has(.start-layout) .start-hero-logo img,
+  body:has(.start-layout) .brand-logo-full {
+    width: 285px !important;
+    max-width: 285px !important;
+    max-height: 210px !important;
+  }
+}
+
+@media screen and (max-width: 720px) {
+  body:has(.start-layout) .start-hero-copy {
+    grid-template-columns: 1fr !important;
+    gap: 14px !important;
+  }
+
+  body:has(.start-layout) .start-hero-logo,
+  body:has(.start-layout) .start-hero-logo img,
+  body:has(.start-layout) .brand-logo-full {
+    width: 240px !important;
+    max-width: 75vw !important;
+    margin: 0 auto !important;
+  }
+
+  body:has(.start-layout) .start-hero-text {
+    text-align: center !important;
+  }
+}
+
+
+/* ==========================================================
+   v330 – letzte gelbe/beige Reste entfernen
+   ========================================================== */
+
+@media screen {
+  /* Ausgabe-Kopf: altes Creme vollständig entfernen */
+  body:not(:has(.start-layout)) .print-output-header {
+    border: 1px solid #dce7f0 !important;
+    border-bottom: 1px solid #dce7f0 !important;
+    background: linear-gradient(90deg, #ffffff 0%, #f7fbfe 62%, #eef8f6 100%) !important;
+    box-shadow: none !important;
+  }
+
+  /* Buttonleiste Ausgabe: genau der gelbe Rahmen aus dem Screenshot */
+  body:not(:has(.start-layout)) .print-output-actions {
+    border: 1px solid #dce7f0 !important;
+    border-radius: 14px !important;
+    background: #f8fbfe !important;
+    box-shadow: none !important;
+    padding: 5px !important;
+  }
+
+  /* Vorschau nur auf dem Bildschirm neutral einfassen;
+     Inhalt/amtliches Drucklayout selbst bleibt unverändert */
+  body:not(:has(.start-layout)) .print-preview {
+    border-color: #dce5ee !important;
+    background: #ffffff !important;
+    box-shadow: 0 5px 16px rgba(43, 63, 91, .035) !important;
+  }
+
+  /* Untere Arbeitsnavigation: alte warme Linie entfernen */
+  body:not(:has(.start-layout)) .bottom-nav {
+    border-top-color: #dce5ee !important;
+    background: rgba(255,255,255,.95) !important;
+    box-shadow: 0 -8px 24px rgba(43,63,91,.045) !important;
+  }
+
+  /* Statusmeldungen ebenfalls nicht mehr cremefarben */
+  body:not(:has(.start-layout)) .workflow-status-toast {
+    border-color: #cfe0ec !important;
+    background: #f2f8fc !important;
+    color: #405e78 !important;
+  }
+
+  /* Startseite: Unterstützen-Hinweis ohne gelben Rahmen */
+  body:has(.start-layout) .start-support-card,
+  body:has(.start-layout) .support-callout {
+    border-color: #cfe0ec !important;
+    background: linear-gradient(90deg, #f6fbfe 0%, #f3faf8 100%) !important;
+    box-shadow: none !important;
+  }
+
+  body:has(.start-layout) .start-support-card::before,
+  body:has(.start-layout) .support-callout::before {
+    background: #83b6cf !important;
+  }
+
+  body:has(.start-layout) .support-link-button,
+  body:has(.start-layout) .start-support-card .support-link-button {
+    border-color: #c7dbe9 !important;
+    background: #ffffff !important;
+    color: #355f7f !important;
+  }
+
+  /* zusätzliche alte Sandflächen im Ausgabebereich */
+  body:not(:has(.start-layout)) .print-output-panel,
+  body:not(:has(.start-layout)) .print-output-panel > * {
+    --surface-sand: #f6f9fc;
+    --sand-line: #dce7f0;
+  }
+}
+
+
+/* ==========================================================
+   v331 – Markenbild finalisieren
+   - Startlogo ca. halb so groß
+   - Start-Hero kompakt
+   - Seitenüberschriften ohne gelb/creme
+   ========================================================== */
+
+@media screen {
+  /* Startseite: deutlich kleineres Markenlogo */
+  body:has(.start-layout) .start-hero {
+    min-height: 0 !important;
+    padding: 22px 30px !important;
+    background: linear-gradient(100deg, #ffffff 0%, #f7fbfe 58%, #eef9f8 100%) !important;
+  }
+
+  body:has(.start-layout) .start-hero-copy {
+    display: grid !important;
+    grid-template-columns: 210px minmax(0, 1fr) !important;
+    align-items: center !important;
+    gap: 34px !important;
+  }
+
+  body:has(.start-layout) .start-hero-logo,
+  body:has(.start-layout) .start-hero-logo img,
+  body:has(.start-layout) .brand-logo-full {
+    width: 195px !important;
+    max-width: 195px !important;
+    max-height: 150px !important;
+    height: auto !important;
+    object-fit: contain !important;
+    object-position: left center !important;
+    margin: 0 !important;
+    display: block !important;
+  }
+
+  body:has(.start-layout) .start-hero-text,
+  body:has(.start-layout) .start-hero-copy > p {
+    max-width: 790px !important;
+    margin: 0 !important;
+    padding-left: 30px !important;
+    border-left: 1px solid #cfe1ee !important;
+  }
+
+  body:has(.start-layout) .start-brand-heading {
+    display: block;
+    margin-bottom: 8px;
+    color: #173b68;
+    font-size: clamp(1.45rem, 2.2vw, 2rem);
+    line-height: 1.12;
+    font-weight: 780;
+    letter-spacing: -.025em;
+  }
+
+  body:has(.start-layout) .start-brand-description {
+    display: block;
+    color: #5d718a;
+    font-size: 1rem;
+    line-height: 1.5;
+    font-weight: 520;
+  }
+
+  /* Alle großen Seitenköpfe: ausschließlich kühle Farben */
+  body:not(:has(.start-layout)) .workspace-page-hero,
+  body:not(:has(.start-layout)) .page-hero,
+  body:not(:has(.start-layout)) .section-hero,
+  body:not(:has(.start-layout)) .workspace-hero,
+  body:not(:has(.start-layout)) .print-output-header,
+  body:not(:has(.start-layout)) .storage-page-header {
+    border-color: #dce7f0 !important;
+    background: linear-gradient(100deg, #ffffff 0%, #f7fbfe 58%, #eef9f8 100%) !important;
+    box-shadow: 0 8px 22px rgba(43, 63, 91, .045) !important;
+  }
+
+  /* Falls die alten Seitenköpfe über allgemeine card-Klassen aufgebaut sind */
+  body:not(:has(.start-layout)) main > .card:first-child,
+  body:not(:has(.start-layout)) .workspace-main > .card:first-child {
+    --surface-sand: #ffffff;
+    --sand-line: #dce7f0;
+  }
+}
+
+@media screen and (max-width: 760px) {
+  body:has(.start-layout) .start-hero-copy {
+    grid-template-columns: 1fr !important;
+    gap: 14px !important;
+  }
+
+  body:has(.start-layout) .start-hero-logo,
+  body:has(.start-layout) .start-hero-logo img,
+  body:has(.start-layout) .brand-logo-full {
+    width: 165px !important;
+    max-width: 55vw !important;
+    margin: 0 auto !important;
+  }
+
+  body:has(.start-layout) .start-hero-text,
+  body:has(.start-layout) .start-hero-copy > p {
+    padding: 14px 0 0 !important;
+    border-left: 0 !important;
+    border-top: 1px solid #d7e6ef !important;
+    text-align: center !important;
+  }
+}
+
+
+/* ==========================================================
+   v332 – Seitenüberschriften beruhigt
+   Große Hero-Karten entfallen. Titel stehen leicht und direkt
+   über dem Inhalt, damit der Arbeitsbereich im Mittelpunkt steht.
+   ========================================================== */
+
+@media screen {
+  body:not(:has(.start-layout)) .workspace-page-hero,
+  body:not(:has(.start-layout)) .page-hero,
+  body:not(:has(.start-layout)) .section-hero,
+  body:not(:has(.start-layout)) .workspace-hero,
+  body:not(:has(.start-layout)) .print-output-header,
+  body:not(:has(.start-layout)) .storage-page-header {
+    min-height: 0 !important;
+    margin: 0 0 18px !important;
+    padding: 0 0 12px !important;
+    border: 0 !important;
+    border-bottom: 1px solid #dce6ef !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+  }
+
+  body:not(:has(.start-layout)) .workspace-page-hero h1,
+  body:not(:has(.start-layout)) .workspace-page-hero h2,
+  body:not(:has(.start-layout)) .page-hero h1,
+  body:not(:has(.start-layout)) .page-hero h2,
+  body:not(:has(.start-layout)) .section-hero h1,
+  body:not(:has(.start-layout)) .section-hero h2,
+  body:not(:has(.start-layout)) .workspace-hero h1,
+  body:not(:has(.start-layout)) .workspace-hero h2,
+  body:not(:has(.start-layout)) .print-output-header h1,
+  body:not(:has(.start-layout)) .print-output-header h2,
+  body:not(:has(.start-layout)) .storage-page-header h1,
+  body:not(:has(.start-layout)) .storage-page-header h2 {
+    margin: 0 !important;
+    color: #19395f !important;
+    font-size: clamp(1.45rem, 2vw, 1.85rem) !important;
+    line-height: 1.15 !important;
+    letter-spacing: -.02em !important;
+    font-weight: 760 !important;
+  }
+
+  body:not(:has(.start-layout)) .workspace-page-hero p,
+  body:not(:has(.start-layout)) .page-hero p,
+  body:not(:has(.start-layout)) .section-hero p,
+  body:not(:has(.start-layout)) .workspace-hero p,
+  body:not(:has(.start-layout)) .print-output-header p,
+  body:not(:has(.start-layout)) .storage-page-header p,
+  body:not(:has(.start-layout)) .section-title .hint {
+    margin: 4px 0 0 !important;
+    color: #718197 !important;
+    font-size: .92rem !important;
+    line-height: 1.4 !important;
+  }
+
+  /* Falls Seitenüberschriften über section-title statt Hero laufen */
+  body:not(:has(.start-layout)) .section-title {
+    position: relative;
+    margin: 0 0 18px !important;
+    padding: 0 0 12px !important;
+    border-bottom: 1px solid #dce6ef !important;
+    background: transparent !important;
+  }
+
+  body:not(:has(.start-layout)) .section-title::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    bottom: -1px;
+    width: 58px;
+    height: 2px;
+    border-radius: 2px;
+    background: linear-gradient(90deg, #4f80b1 0%, #69aaa5 100%);
+  }
+
+  body:not(:has(.start-layout)) .section-title h2 {
+    font-size: clamp(1.45rem, 2vw, 1.85rem) !important;
+  }
+
+  /* Ausgabe: Button rechts bleibt funktional, ohne große Kopfkarte */
+  body:not(:has(.start-layout)) .print-output-header {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 18px !important;
+  }
+
+  body:not(:has(.start-layout)) .print-output-header > * {
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
+  }
+
+  /* Arbeitsinhalt rückt sichtbar nach oben */
+  body:not(:has(.start-layout)) .page-shell {
+    padding-top: 94px !important;
+  }
+}
+
+@media screen and (max-width: 720px) {
+  body:not(:has(.start-layout)) .print-output-header {
+    align-items: flex-start !important;
+    flex-direction: column !important;
+  }
+
+  body:not(:has(.start-layout)) .page-shell {
+    padding-top: 84px !important;
+  }
+}
