@@ -10811,12 +10811,15 @@ function composeModuleBasedSupportPlan({ area, gradeBand, entries = [], formatOp
     suggestion.istStand = pilotIstStand;
   }
 
+  // Sprache / Kommunikation bleibt bewusst bei der geprüften Abschnittslogik:
+  // jeder ausgewählte Sprachbereich als eigener Ist-Stand-Abschnitt.
+  // Der spätere Entwicklungs-Prototyp darf diese Struktur nicht mehr überschreiben.
   // Prototyp v302: entwicklungsorientierte Textfassung für drei Pilotbereiche.
   // Fachliche Inhalte bleiben aus den vorhandenen Förderketten; es werden keine
   // neuen Kompetenzen erfunden. Eine positive Ressource wird nur ergänzt, wenn
   // im Kompetenzraster tatsächlich mindestens eine Kompetenz als "gesichert"
   // eingeschätzt und dafür eine hinterlegte Förderkette gefunden wurde.
-  if (["Lern- und Leistungsverhalten", "Sprache / Kommunikation", "Deutsch"].includes(area)) {
+  if (["Lern- und Leistungsverhalten", "Deutsch"].includes(area)) {
     applyDevelopmentalTextPrototype({
       area,
       gradeBand,
@@ -11013,11 +11016,16 @@ function composeModuleBasedSupportPlan({ area, gradeBand, entries = [], formatOp
       }
     }
   }
-  const istStandChains = speechChainSuggestion?.chains || [];
-  const groupedIstStand = istStandChains.length
-    ? groupedIstStandFromChains(area, istStandChains)
-    : groupedIstStandFromEntries(area, activeEntries, suggestion.istStand);
-  if (groupedIstStand) suggestion.istStand = groupedIstStand;
+  // Sprache / Kommunikation: exakt die bereits geprüfte Abschnittslogik beibehalten.
+  // Die Sprach-Förderketten liefern den Ist-Stand bereits als getrennte fachliche Abschnitte.
+  // Die spätere allgemeine Gruppierungslogik darf diesen Text nicht erneut ersetzen.
+  if (area !== "Sprache / Kommunikation") {
+    const istStandChains = speechChainSuggestion?.chains || [];
+    const groupedIstStand = istStandChains.length
+      ? groupedIstStandFromChains(area, istStandChains)
+      : groupedIstStandFromEntries(area, activeEntries, suggestion.istStand);
+    if (groupedIstStand) suggestion.istStand = groupedIstStand;
+  }
 
   suggestion._meta = meta;
   const displayedSuggestion = area === "Sprache / Kommunikation"
